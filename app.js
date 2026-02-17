@@ -1,7 +1,7 @@
 let currentTrack = null;
 let accessToken = null;
 const clientId = "fe93600360614cf7b243cf847d35077e";
-const redirectUri = "https://benitov99.github.io/ProjectPOM/";
+const redirectUri = "https://Benitov99.github.io/ProjectPOM/";
 const playlists = {
   Decade20: {
     name: "20's",
