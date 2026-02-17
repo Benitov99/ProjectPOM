@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>POM Project</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="app">
+    <h1>🎵 POM Project</h1>
+    <p class="subtitle">Test your music knowledge</p>
+    <button id="loginBtn">Login with Spotify</button>
+    <p id="status"></p>
+
+<div id="playlistSelect" style="display:none;">
+  <h2>Choose a playlist</h2>
+  <select id="playlistDropdown"></select>
+  <button id="startGameBtn">Start Game</button>
+</div>
+
+
+<div id="quizArea" class="hidden">
+  <p class="now-playing">Now playing...</p>
+
+  <input id="titleInput" type="text" placeholder="Song title" />
+  <input id="artistInput" type="text" placeholder="Artist" />
+
+  <button id="submitBtn">Submit answer</button>
+</div>
+
+
+  </div>
+<script>
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    player = new Spotify.Player({
+      name: 'Music Quiz Player',
+      getOAuthToken: cb => { cb(accessToken); },
+      volume: 0.5
+    });
+
+    player.addListener('ready', ({ device_id }) => {
+      console.log('Ready with Device ID', device_id);
+      player.device_id = device_id;
+    });
+
+    player.connect();
+  };
+</script>
+
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+  <script src="app.js"></script>
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+</body>
+
+</html>

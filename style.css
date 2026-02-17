@@ -1,0 +1,73 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1db954, #191414);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-family: system-ui, sans-serif;
+}
+
+.app {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 32px;
+  border-radius: 16px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.subtitle {
+  opacity: 0.8;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  background: #1db954;
+  color: black;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+#status {
+  margin-top: 15px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.hidden {
+  display: none;
+}
+
+.now-playing {
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+}
+
+#submitBtn {
+  margin-top: 15px;
+}
+
