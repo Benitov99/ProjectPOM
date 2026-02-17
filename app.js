@@ -1,7 +1,7 @@
 let currentTrack = null;
 let accessToken = null;
 const clientId = "fe93600360614cf7b243cf847d35077e";
-const redirectUri = "https://magnificent-begonia-310bcc.netlify.app/";
+const redirectUri = "https://benitov99.github.io/ProjectPOM/";
 const playlists = {
   Decade20: {
     name: "20's",
