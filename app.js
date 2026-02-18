@@ -1,12 +1,14 @@
-const clientId = "fe93600360614cf7b243cf847d35077e";
+// ---------------------------
+// CONFIG
+// ---------------------------
+const clientId = "PASTE_YOUR_CLIENT_ID_HERE";
 const redirectUri = window.location.origin + window.location.pathname;
-
-
-
 
 let accessToken = null;
 
-// ---------- PKCE helpers ----------
+// ---------------------------
+// PKCE helpers
+// ---------------------------
 function generateRandomString(length) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -30,17 +32,16 @@ function base64encode(input) {
     .replace(/=+$/, "");
 }
 
-// ---------- Login ----------
+// ---------------------------
+// LOGIN BUTTON
+// ---------------------------
 document.getElementById("loginBtn").onclick = async () => {
-  // 1. Generate PKCE code verifier & challenge
   const codeVerifier = generateRandomString(64);
   const hashed = await sha256(codeVerifier);
   const codeChallenge = base64encode(hashed);
 
-  // 2. Store verifier locally
   localStorage.setItem("code_verifier", codeVerifier);
 
-  // 3. Build Spotify auth URL
   const scopes = [
     "user-read-private",
     "playlist-read-private",
@@ -56,12 +57,12 @@ document.getElementById("loginBtn").onclick = async () => {
     "&code_challenge_method=S256" +
     "&code_challenge=" + codeChallenge;
 
-  // 4. Redirect to Spotify login
   window.location.href = authUrl;
 };
 
-
-// ---------- Token exchange ----------
+// ---------------------------
+// EXCHANGE TOKEN
+// ---------------------------
 async function exchangeToken() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get("code");
@@ -77,54 +78,31 @@ async function exchangeToken() {
     code_verifier: verifier
   });
 
-  const response = await fetch(
-    "https://accounts.spotify.com/api/token",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body
-    }
-  );
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
 
   const data = await response.json();
   accessToken = data.access_token;
 
- document.getElementById("status").textContent =
-  "Connected to Spotify ✅";
+  document.getElementById("status").textContent = "Connected to Spotify ✅";
 
-await initPlaylists();
-
+  // After login, initialize playlist dropdown
+  await initPlaylists();
 }
 
-// ---------- Init ----------
-exchangeToken();
-
-async function fetchUserPlaylists() {
-  let playlists = [];
-  let url = "https://api.spotify.com/v1/me/playlists?limit=50";
-
-  while (url) {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    const data = await response.json();
-    playlists.push(...data.items);
-    url = data.next;
-  }
-
-  return playlists;
-}
-
+// ---------------------------
+// FETCH PLAYLISTS
+// ---------------------------
 async function initPlaylists() {
   const select = document.getElementById("playlistSelect");
   const status = document.getElementById("playlistStatus");
 
-  // Disable dropdown while loading
   select.disabled = true;
   status.textContent = "Loading playlists...";
 
-  // Fetch all playlists (pagination-safe)
   let playlists = [];
   let url = "https://api.spotify.com/v1/me/playlists?limit=50";
 
@@ -134,70 +112,15 @@ async function initPlaylists() {
     });
     const data = await response.json();
     playlists.push(...data.items);
-    url = data.next; // fetch next page automatically
-  }
-
-  // Sort playlists alphabetically by name
-  playlists.sort((a, b) => a.name.localeCompare(b.name));
-
-  // Clear dropdown and add placeholder
-  select.innerHTML = '<option value="">Select a playlist</option>';
-
-  // Add all playlists to dropdown
-  playlists.forEach(p => {
-    const option = document.createElement("option");
-    option.value = p.id;
-    option.textContent = `${p.name} (${p.owner.display_name})`;
-    select.appendChild(option);
-  });
-
-  select.disabled = false;
-  status.textContent = `Loaded ${playlists.length} playlists ✅`;
-}
-
-
-async function fetchAllTracks(playlistId) {
-  let tracks = [];
-  let url =
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
-
-  while (url) {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    const data = await response.json();
-
-    tracks.push(
-      ...data.items
-        .filter(item => item.track)
-        .map(item => ({
-          title: item.track.name,
-          artist: item.track.artists.map(a => a.name).join(", ")
-        }))
-    );
-
     url = data.next;
   }
 
-  return tracks;
-}
+  // Sort alphabetically
+  playlists.sort((a, b) => a.name.localeCompare(b.name));
 
-document
-  .getElementById("playlistSelect")
-  .addEventListener("change", async (e) => {
-
-    const playlistId = e.target.value;
-    if (!playlistId) return;
-
-    document.getElementById("playlistStatus").textContent =
-      "Loading tracks...";
-
-    const tracks = await fetchAllTracks(playlistId);
-
-    document.getElementById("playlistStatus").textContent =
-      `Loaded ${tracks.length} tracks ✅`;
-
-    console.log("Tracks ready:", tracks);
-  });
-
+  // Populate dropdown
+  select.innerHTML = '<option value="">Select a playlist</option>';
+  playlists.forEach(p => {
+    const option = document.createElement("option");
+    option.value = p.id;
+    option.textContent = `${p.na
