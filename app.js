@@ -1,5 +1,20 @@
 const clientId = "fe93600360614cf7b243cf847d35077e";
 const redirectUri = window.location.origin + window.location.pathname;
+const scopes = [
+  "user-read-private",
+  "playlist-read-private",
+  "playlist-read-collaborative"
+];
+const authUrl =
+  "https://accounts.spotify.com/authorize" +
+  "?client_id=" + clientId +
+  "&response_type=code" +
+  "&redirect_uri=" + encodeURIComponent(redirectUri) +
+  "&scope=" + encodeURIComponent(scopes.join(" ")) +
+  "&code_challenge_method=S256" +
+  "&code_challenge=" + codeChallenge;
+
+
 
 let accessToken = null;
 
