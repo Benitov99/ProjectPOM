@@ -75,9 +75,91 @@ async function exchangeToken() {
   const data = await response.json();
   accessToken = data.access_token;
 
-  document.getElementById("status").textContent =
-    "Connected to Spotify ✅";
+ document.getElementById("status").textContent =
+  "Connected to Spotify ✅";
+
+await initPlaylists();
+
 }
 
 // ---------- Init ----------
 exchangeToken();
+
+async function fetchUserPlaylists() {
+  let playlists = [];
+  let url = "https://api.spotify.com/v1/me/playlists?limit=50";
+
+  while (url) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const data = await response.json();
+    playlists.push(...data.items);
+    url = data.next;
+  }
+
+  return playlists;
+}
+
+async function initPlaylists() {
+  const select = document.getElementById("playlistSelect");
+  select.disabled = true;
+
+  const playlists = await fetchUserPlaylists();
+
+  playlists.forEach(p => {
+    const option = document.createElement("option");
+    option.value = p.id;
+    option.textContent = p.name;
+    select.appendChild(option);
+  });
+
+  select.disabled = false;
+}
+
+async function fetchAllTracks(playlistId) {
+  let tracks = [];
+  let url =
+    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+
+  while (url) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const data = await response.json();
+
+    tracks.push(
+      ...data.items
+        .filter(item => item.track)
+        .map(item => ({
+          title: item.track.name,
+          artist: item.track.artists.map(a => a.name).join(", ")
+        }))
+    );
+
+    url = data.next;
+  }
+
+  return tracks;
+}
+
+document
+  .getElementById("playlistSelect")
+  .addEventListener("change", async (e) => {
+
+    const playlistId = e.target.value;
+    if (!playlistId) return;
+
+    document.getElementById("playlistStatus").textContent =
+      "Loading tracks...";
+
+    const tracks = await fetchAllTracks(playlistId);
+
+    document.getElementById("playlistStatus").textContent =
+      `Loaded ${tracks.length} tracks ✅`;
+
+    console.log("Tracks ready:", tracks);
+  });
+
