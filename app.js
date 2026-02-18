@@ -1,7 +1,7 @@
 // ---------------------------
 // CONFIG
 // ---------------------------
-const clientId = "PASTE_YOUR_CLIENT_ID_HERE";
+const clientId = "fe93600360614cf7b243cf847d35077e";
 const redirectUri = window.location.origin + window.location.pathname;
 
 let accessToken = null;

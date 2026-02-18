@@ -1,30 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Spotify Music Quiz</title>
+  <meta charset="UTF-8" />
+  <title>Music Quiz</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Spotify Music Quiz</h1>
+  <h1>Project POM</h1>
 
   <button id="loginBtn">Login with Spotify</button>
+
   <p id="status">Not connected</p>
 
-  <select id="playlistSelect" disabled>
-    <option value="">Select a playlist</option>
-  </select>
-  <p id="playlistStatus"></p>
+<select id="playlistSelect" disabled>
+  <option value="">Select a playlist</option>
+</select>
 
-  <button id="startQuizBtn" style="display:none;">Start Quiz</button>
+<p id="playlistStatus"></p>
 
-  <div id="quizSection" style="display:none;">
-    <p id="quizPrompt">Press "Start Quiz" to begin</p>
-    <input type="text" id="guessInput" placeholder="Type title or artist" />
-    <button id="submitGuessBtn">Submit Guess</button>
-    <p id="feedback"></p>
-    <p>Score: <span id="score">0</span></p>
-    <button id="nextTrackBtn">Next Track</button>
-  </div>
+<div id="quizSection" style="display:none;">
+  <p id="quizPrompt">Press "Start Quiz" to begin</p>
+  <input type="text" id="guessInput" placeholder="Type title or artist" />
+  <button id="submitGuessBtn">Submit Guess</button>
+  <p id="feedback"></p>
+  <p>Score: <span id="score">0</span></p>
+  <button id="nextTrackBtn">Next Track</button>
+</div>
+
+<button id="startQuizBtn" style="display:none;">Start Quiz</button>
+
 
   <script src="app.js"></script>
 </body>
