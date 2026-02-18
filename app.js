@@ -119,19 +119,43 @@ async function fetchUserPlaylists() {
 
 async function initPlaylists() {
   const select = document.getElementById("playlistSelect");
+  const status = document.getElementById("playlistStatus");
+
+  // Disable dropdown while loading
   select.disabled = true;
+  status.textContent = "Loading playlists...";
 
-  const playlists = await fetchUserPlaylists();
+  // Fetch all playlists (pagination-safe)
+  let playlists = [];
+  let url = "https://api.spotify.com/v1/me/playlists?limit=50";
 
+  while (url) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await response.json();
+    playlists.push(...data.items);
+    url = data.next; // fetch next page automatically
+  }
+
+  // Sort playlists alphabetically by name
+  playlists.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Clear dropdown and add placeholder
+  select.innerHTML = '<option value="">Select a playlist</option>';
+
+  // Add all playlists to dropdown
   playlists.forEach(p => {
     const option = document.createElement("option");
     option.value = p.id;
-    option.textContent = p.name;
+    option.textContent = `${p.name} (${p.owner.display_name})`;
     select.appendChild(option);
   });
 
   select.disabled = false;
+  status.textContent = `Loaded ${playlists.length} playlists ✅`;
 }
+
 
 async function fetchAllTracks(playlistId) {
   let tracks = [];
