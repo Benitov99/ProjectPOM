@@ -1,18 +1,6 @@
 const clientId = "fe93600360614cf7b243cf847d35077e";
 const redirectUri = window.location.origin + window.location.pathname;
-const scopes = [
-  "user-read-private",
-  "playlist-read-private",
-  "playlist-read-collaborative"
-];
-const authUrl =
-  "https://accounts.spotify.com/authorize" +
-  "?client_id=" + clientId +
-  "&response_type=code" +
-  "&redirect_uri=" + encodeURIComponent(redirectUri) +
-  "&scope=" + encodeURIComponent(scopes.join(" ")) +
-  "&code_challenge_method=S256" +
-  "&code_challenge=" + codeChallenge;
+
 
 
 
@@ -44,23 +32,34 @@ function base64encode(input) {
 
 // ---------- Login ----------
 document.getElementById("loginBtn").onclick = async () => {
+  // 1. Generate PKCE code verifier & challenge
   const codeVerifier = generateRandomString(64);
   const hashed = await sha256(codeVerifier);
   const codeChallenge = base64encode(hashed);
 
+  // 2. Store verifier locally
   localStorage.setItem("code_verifier", codeVerifier);
+
+  // 3. Build Spotify auth URL
+  const scopes = [
+    "user-read-private",
+    "playlist-read-private",
+    "playlist-read-collaborative"
+  ];
 
   const authUrl =
     "https://accounts.spotify.com/authorize" +
     "?client_id=" + clientId +
     "&response_type=code" +
     "&redirect_uri=" + encodeURIComponent(redirectUri) +
-    "&scope=user-read-private" +
+    "&scope=" + encodeURIComponent(scopes.join(" ")) +
     "&code_challenge_method=S256" +
     "&code_challenge=" + codeChallenge;
 
+  // 4. Redirect to Spotify login
   window.location.href = authUrl;
 };
+
 
 // ---------- Token exchange ----------
 async function exchangeToken() {
