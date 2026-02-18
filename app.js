@@ -10,8 +10,7 @@ let accessToken = null;
 // PKCE helpers
 // ---------------------------
 function generateRandomString(length) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -36,6 +35,8 @@ function base64encode(input) {
 // LOGIN BUTTON
 // ---------------------------
 document.getElementById("loginBtn").onclick = async () => {
+  localStorage.removeItem("code_verifier");
+
   const codeVerifier = generateRandomString(64);
   const hashed = await sha256(codeVerifier);
   const codeChallenge = base64encode(hashed);
@@ -69,6 +70,10 @@ async function exchangeToken() {
   if (!code) return;
 
   const verifier = localStorage.getItem("code_verifier");
+  if (!verifier) {
+    console.error("No code verifier found. Please login again.");
+    return;
+  }
 
   const body = new URLSearchParams({
     client_id: clientId,
@@ -78,19 +83,28 @@ async function exchangeToken() {
     code_verifier: verifier
   });
 
-  const response = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body
-  });
+  try {
+    const response = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
 
-  const data = await response.json();
-  accessToken = data.access_token;
+    const data = await response.json();
 
-  document.getElementById("status").textContent = "Connected to Spotify ✅";
+    if (data.error) {
+      console.error("Token exchange failed:", data);
+      alert("Token exchange failed. Please login again.");
+      return;
+    }
 
-  // After login, initialize playlist dropdown
-  await initPlaylists();
+    accessToken = data.access_token;
+    document.getElementById("status").textContent = "Connected to Spotify ✅";
+
+    await initPlaylists();
+  } catch (err) {
+    console.error("Network or fetch error during token exchange:", err);
+  }
 }
 
 // ---------------------------
@@ -103,58 +117,77 @@ async function initPlaylists() {
   select.disabled = true;
   status.textContent = "Loading playlists...";
 
-  let playlists = [];
-  let url = "https://api.spotify.com/v1/me/playlists?limit=50";
+  try {
+    let playlists = [];
+    let url = "https://api.spotify.com/v1/me/playlists?limit=50";
 
-  while (url) {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+    while (url) {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error("Spotify API error:", data.error);
+        status.textContent = `Error loading playlists: ${data.error.message}`;
+        return;
+      }
+
+      playlists.push(...data.items);
+      url = data.next;
+    }
+
+    playlists.sort((a, b) => a.name.localeCompare(b.name));
+
+    select.innerHTML = '<option value="">Select a playlist</option>';
+    playlists.forEach(p => {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = `${p.name} (${p.owner.display_name})`;
+      select.appendChild(option);
     });
-    const data = await response.json();
-    playlists.push(...data.items);
-    url = data.next;
+
+    select.disabled = false;
+    status.textContent = `Loaded ${playlists.length} playlists ✅`;
+  } catch (err) {
+    console.error("Error fetching playlists:", err);
+    status.textContent = "Error fetching playlists";
   }
-
-  // Sort alphabetically
-  playlists.sort((a, b) => a.name.localeCompare(b.name));
-
-  // Populate dropdown
-  select.innerHTML = '<option value="">Select a playlist</option>';
-  playlists.forEach(p => {
-    const option = document.createElement("option");
-    option.value = p.id;
-    option.textContent = `${p.name} (${p.owner.display_name})`;
-    select.appendChild(option);
-  });
-
-  select.disabled = false;
-  status.textContent = `Loaded ${playlists.length} playlists ✅`;
 }
 
 // ---------------------------
-// FETCH ALL TRACKS FROM PLAYLIST
+// FETCH TRACKS
 // ---------------------------
 async function fetchAllTracks(playlistId) {
   let tracks = [];
   let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
 
-  while (url) {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+  try {
+    while (url) {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await response.json();
 
-    const data = await response.json();
+      if (data.error) {
+        console.error("Spotify API error:", data.error);
+        break;
+      }
 
-    tracks.push(
-      ...data.items
-        .filter(item => item.track)
-        .map(item => ({
-          title: item.track.name,
-          artist: item.track.artists.map(a => a.name).join(", ")
-        }))
-    );
+      tracks.push(
+        ...data.items
+          .filter(item => item.track)
+          .map(item => ({
+            title: item.track.name,
+            artist: item.track.artists.map(a => a.name).join(", ")
+          }))
+      );
 
-    url = data.next;
+      url = data.next;
+    }
+  } catch (err) {
+    console.error("Error fetching tracks:", err);
   }
 
   return tracks;
@@ -167,7 +200,6 @@ let currentPlaylistTracks = [];
 let currentTrackIndex = 0;
 let score = 0;
 
-// Start Quiz button
 document.getElementById("startQuizBtn").onclick = () => {
   if (!currentPlaylistTracks.length) return;
 
@@ -181,7 +213,6 @@ document.getElementById("startQuizBtn").onclick = () => {
   showTrack();
 };
 
-// Next Track button
 document.getElementById("nextTrackBtn").onclick = () => {
   currentTrackIndex++;
   if (currentTrackIndex >= currentPlaylistTracks.length) {
@@ -194,14 +225,12 @@ document.getElementById("nextTrackBtn").onclick = () => {
   document.getElementById("guessInput").value = "";
 };
 
-// Show current track prompt
 function showTrack() {
   const track = currentPlaylistTracks[currentTrackIndex];
   document.getElementById("quizPrompt").textContent =
     `Track ${currentTrackIndex + 1} of ${currentPlaylistTracks.length}`;
 }
 
-// Submit guess
 document.getElementById("submitGuessBtn").onclick = () => {
   const guess = document.getElementById("guessInput").value.toLowerCase().trim();
   const track = currentPlaylistTracks[currentTrackIndex];
@@ -222,7 +251,7 @@ document.getElementById("submitGuessBtn").onclick = () => {
 };
 
 // ---------------------------
-// PLAYLIST SELECTION HANDLER
+// PLAYLIST SELECT HANDLER
 // ---------------------------
 document.getElementById("playlistSelect").addEventListener("change", async (e) => {
   const playlistId = e.target.value;
@@ -241,6 +270,6 @@ document.getElementById("playlistSelect").addEventListener("change", async (e) =
 });
 
 // ---------------------------
-// INIT ON PAGE LOAD
+// INIT
 // ---------------------------
 exchangeToken();
