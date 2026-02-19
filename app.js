@@ -108,18 +108,30 @@ async function fetchUserProfile() {
 // SPOTIFY SDK CALLBACK (MUST BE GLOBAL)
 // ---------------------------
 window.onSpotifyWebPlaybackSDKReady = () => {
-  player = new Spotify.Player({
-    name: "Music Quiz Player",
-    getOAuthToken: cb => cb(accessToken)
-  });
+  const waitForToken = setInterval(() => {
+    if (!accessToken) return;
 
-  player.addListener("ready", ({ device_id }) => {
-    deviceId = device_id;
-    document.getElementById("playerControls").style.display = "block";
-  });
+    clearInterval(waitForToken);
 
-  player.connect();
+    player = new Spotify.Player({
+      name: "Music Quiz Player",
+      getOAuthToken: cb => cb(accessToken)
+    });
+
+    player.addListener("ready", ({ device_id }) => {
+      deviceId = device_id;
+      document.getElementById("playerControls").style.display = "block";
+      console.log("Spotify Player ready:", deviceId);
+    });
+
+    player.addListener("authentication_error", e => {
+      console.error("Auth error", e);
+    });
+
+    player.connect();
+  }, 300);
 };
+
 
 // ---------------------------
 // QUIZ STATE
