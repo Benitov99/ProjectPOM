@@ -38,7 +38,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         document.getElementById("currentTrackDisplay").textContent = "No track playing";
         return;
       }
-      const current = state.track_window.current_track;
       document.getElementById("currentTrackDisplay").textContent = "🔊 Playing...";
     });
 
@@ -132,7 +131,6 @@ async function exchangeToken() {
 
   accessToken = data.access_token;
 
-  // Clean URL
   window.history.replaceState({}, document.title, redirectUri);
 
   document.getElementById("status").textContent = "Connected to Spotify ✅";
@@ -161,7 +159,7 @@ async function fetchPlaylists() {
   const select = document.getElementById("playlistSelect");
   select.innerHTML = `<option value="">Choose a playlist</option>`;
   select.style.display = "block";
-  select.style.margin = "0 auto"; // center dropdown
+  select.style.margin = "0 auto"; 
 
   data.items.forEach(p => {
     const opt = document.createElement("option");
@@ -172,7 +170,6 @@ async function fetchPlaylists() {
 }
 
 function shuffleArray(array) {
-  // Fisher–Yates shuffle
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
@@ -180,12 +177,20 @@ function shuffleArray(array) {
   return array;
 }
 
+// ---------------------------
+// PLAYLIST TRACKS
+// ---------------------------
+let currentPlaylistTracks = [];
+let currentTrackIndex = 0;
+let score = 0;
+let songHistory = []; // for history
+
 async function loadPlaylistTracks(playlistId) {
   const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
-
   const data = await res.json();
+
   currentPlaylistTracks = data.items
     .map(i => i.track)
     .filter(Boolean)
@@ -200,8 +205,10 @@ async function loadPlaylistTracks(playlistId) {
 
   currentTrackIndex = 0;
   score = 0;
+  songHistory = [];
   updateScore();
   showQuizControls();
+  renderHistory();
 
   playTrack(currentPlaylistTracks[0].uri);
 }
@@ -222,6 +229,9 @@ async function playTrack(uri) {
   });
 }
 
+// ---------------------------
+// PLAY / PAUSE / NEXT
+// ---------------------------
 document.getElementById("playBtn").onclick = () => {
   if (!currentPlaylistTracks.length) return;
   playTrack(currentPlaylistTracks[currentTrackIndex].uri);
@@ -232,12 +242,9 @@ document.getElementById("pauseBtn").onclick = () => {
   player.pause();
 };
 
-// ---------------------------
-// QUIZ STATE
-// ---------------------------
-let currentPlaylistTracks = [];
-let currentTrackIndex = 0;
-let score = 0;
+document.getElementById("nextBtn").onclick = () => {
+  nextTrack();
+};
 
 // ---------------------------
 // QUIZ LOGIC
@@ -255,15 +262,17 @@ document.getElementById("submitGuessBtn").onclick = () => {
   let pointsEarned = 0;
   let feedbackMsg = "";
 
-  // Award points only once per correct input
-  if (!titleInput.dataset.correct && titleGuess && titleGuess === track.name.toLowerCase()) {
+  // Get main artist only
+  const mainArtist = track.artists[0].name.toLowerCase();
+
+  if (!titleInput.dataset.correct && isSimilar(titleGuess, track.name.toLowerCase())) {
     pointsEarned++;
     feedbackMsg += "✅ Title correct! ";
     titleInput.disabled = true;
     titleInput.dataset.correct = "true";
   }
 
-  if (!artistInput.dataset.correct && artistGuess && artistGuess === track.artists.map(a => a.name).join(", ").toLowerCase()) {
+  if (!artistInput.dataset.correct && isSimilar(artistGuess, mainArtist)) {
     pointsEarned++;
     feedbackMsg += "✅ Artist correct! ";
     artistInput.disabled = true;
@@ -271,14 +280,20 @@ document.getElementById("submitGuessBtn").onclick = () => {
   }
 
   if (pointsEarned === 0) feedbackMsg = "❌ Try again!";
-  else {
-    score += pointsEarned;
-    updateScore();
-  }
+  else score += pointsEarned;
 
+  updateScore();
   document.getElementById("feedback").textContent = feedbackMsg;
 
+  // If both answered, move to next
   if (titleInput.disabled && artistInput.disabled) {
+    songHistory.push({
+      title: track.name,
+      artist: mainArtist,
+      image: track.album.images[0]?.url || "",
+      points: pointsEarned
+    });
+    renderHistory();
     setTimeout(nextTrack, 1000);
   }
 };
@@ -287,25 +302,35 @@ document.getElementById("submitGuessBtn").onclick = () => {
 // PASS BUTTON
 // ---------------------------
 document.getElementById("passBtn").onclick = () => {
-  nextTrack(); // no points added
+  const track = currentPlaylistTracks[currentTrackIndex];
+  const mainArtist = track.artists[0].name.toLowerCase();
+  songHistory.push({
+    title: track.name,
+    artist: mainArtist,
+    image: track.album.images[0]?.url || "",
+    points: 0
+  });
+  renderHistory();
+  nextTrack();
 };
 
 // ---------------------------
-// NEXT TRACK HELPER
+// NEXT TRACK
 // ---------------------------
 function nextTrack() {
   currentTrackIndex++;
   if (currentTrackIndex >= currentPlaylistTracks.length) {
     document.getElementById("quizPrompt").textContent = "Quiz finished!";
     document.getElementById("quizSection").style.display = "none";
+    document.getElementById("repeatBtn").style.display = "inline-block";
     return;
   }
 
   const titleInput = document.getElementById("guessTitle");
   const artistInput = document.getElementById("guessArtist");
   titleInput.value = "";
-  titleInput.disabled = false;
   artistInput.value = "";
+  titleInput.disabled = false;
   artistInput.disabled = false;
   delete titleInput.dataset.correct;
   delete artistInput.dataset.correct;
@@ -317,26 +342,66 @@ function nextTrack() {
 }
 
 // ---------------------------
-// SCORE UI HELPER
+// SCORE
 // ---------------------------
 function updateScore() {
   document.getElementById("score").textContent = score;
 }
 
 // ---------------------------
-// SHOW QUIZ CONTROLS
+// HISTORY
+// ---------------------------
+function renderHistory() {
+  const container = document.getElementById("history");
+  container.innerHTML = "";
+  songHistory.forEach(h => {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    div.innerHTML = `
+      <img src="${h.image}" alt="cover" width="40" height="40">
+      <span>${h.title} - ${h.artist} (${h.points} pts)</span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ---------------------------
+// REPEAT QUIZ
+// ---------------------------
+document.getElementById("repeatBtn").onclick = () => {
+  shuffleArray(currentPlaylistTracks);
+  currentTrackIndex = 0;
+  score = 0;
+  songHistory = [];
+  updateScore();
+  renderHistory();
+  showQuizControls();
+  document.getElementById("repeatBtn").style.display = "none";
+  playTrack(currentPlaylistTracks[0].uri);
+};
+
+// ---------------------------
+// UTILS
+// ---------------------------
+function isSimilar(a, b) {
+  if (!a || !b) return false;
+  a = a.toLowerCase();
+  b = b.toLowerCase();
+  if (a === b) return true;
+  // Allow up to 2 character differences
+  let diff = 0;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i] !== b[i]) diff++;
+  }
+  return diff <= 2;
+}
+
+// ---------------------------
+// SHOW QUIZ
 // ---------------------------
 function showQuizControls() {
   document.getElementById("quizSection").style.display = "block";
 }
-
-// ---------------------------
-// PLAYLIST SELECT HANDLER
-// ---------------------------
-document.getElementById("playlistSelect").addEventListener("change", e => {
-  if (!e.target.value) return;
-  loadPlaylistTracks(e.target.value);
-});
 
 // ---------------------------
 // INIT
