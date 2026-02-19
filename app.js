@@ -175,14 +175,16 @@ async function fetchAllTracks(playlistId) {
         break;
       }
 
-      tracks.push(
-        ...data.items
-          .filter(item => item.track)
-          .map(item => ({
-            title: item.track.name,
-            artist: item.track.artists.map(a => a.name).join(", ")
-          }))
-      );
+     tracks.push(
+  ...data.items
+    .filter(item => item.track)
+    .map(item => ({
+      title: item.track.name,
+      artist: item.track.artists.map(a => a.name).join(", "),
+      uri: item.track.uri   // <-- added for playback
+    }))
+);
+
 
       url = data.next;
     }
@@ -192,6 +194,8 @@ async function fetchAllTracks(playlistId) {
 
   return tracks;
 }
+
+
 
 // ---------------------------
 // QUIZ ENGINE
@@ -273,3 +277,91 @@ document.getElementById("playlistSelect").addEventListener("change", async (e) =
 // INIT
 // ---------------------------
 exchangeToken();
+
+let player;
+let deviceId = null;
+
+async function initSpotifyPlayer() {
+  if (!accessToken) return;
+
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    player = new Spotify.Player({
+      name: "Music Quiz Player",
+      getOAuthToken: cb => { cb(accessToken); }
+    });
+
+    // Error handling
+    player.addListener('initialization_error', ({ message }) => console.error(message));
+    player.addListener('authentication_error', ({ message }) => console.error(message));
+    player.addListener('account_error', ({ message }) => console.error(message));
+    player.addListener('playback_error', ({ message }) => console.error(message));
+
+    // Playback status
+    player.addListener('player_state_changed', state => {
+      if (!state) return;
+      document.getElementById("currentTrackDisplay").textContent =
+        `${state.track_window.current_track.name} - ${state.track_window.current_track.artists.map(a=>a.name).join(", ")}`;
+    });
+
+    // Ready
+    player.addListener('ready', ({ device_id }) => {
+      console.log('Ready with Device ID', device_id);
+      deviceId = device_id;
+      document.getElementById("playerControls").style.display = "block";
+    });
+
+    player.connect();
+  };
+}
+document.getElementById("playBtn").onclick = async () => {
+  if (!deviceId || !currentPlaylistTracks.length) return;
+  const track = currentPlaylistTracks[currentTrackIndex];
+  await playTrack(track.uri);
+};
+
+document.getElementById("pauseBtn").onclick = async () => {
+  if (!player) return;
+  await player.pause();
+};
+
+document.getElementById("nextBtn").onclick = () => {
+  currentTrackIndex++;
+  if (currentTrackIndex >= currentPlaylistTracks.length) {
+    alert("Quiz finished!");
+    return;
+  }
+  showTrack();
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("guessInput").value = "";
+  playCurrentTrack();
+};
+
+// Play current track helper
+async function playCurrentTrack() {
+  if (!deviceId) return;
+  const track = currentPlaylistTracks[currentTrackIndex];
+  if (!track.uri) return;
+
+  await playTrack(track.uri);
+}
+
+// Generic play track function
+async function playTrack(trackUri) {
+  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    body: JSON.stringify({ uris: [trackUri] }),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken}`
+    }
+  });
+}
+
+const userProfile = await fetchUserProfile();
+if (userProfile.product === "premium") {
+  document.getElementById("status").textContent = "Premium account detected 🎧";
+  await initSpotifyPlayer();  // initialize player
+} else {
+  document.getElementById("status").textContent = "Premium account required ❌";
+}
+
