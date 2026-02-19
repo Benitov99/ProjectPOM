@@ -8,18 +8,45 @@ let accessToken = null;
 let player = null;
 let deviceId = null;
 
-document.getElementById("quizSection").style.display = "none";
-document.getElementById("sidePanel").style.display = "none";
-document.getElementById("playlistSelect").style.display = "none";
+// ---------------------------
+// DOM REFERENCES
+// ---------------------------
+const loginBtn = document.getElementById("loginBtn");
+const quizSection = document.getElementById("quizSection");
+const sidePanel = document.getElementById("sidePanel");
+const playlistSelect = document.getElementById("playlistSelect");
+const historyEl = document.getElementById("history");
+const scoreEl = document.getElementById("score");
+const guessTitle = document.getElementById("guessTitle");
+const guessArtist = document.getElementById("guessArtist");
+const repeatBtn = document.getElementById("repeatBtn");
+const submitGuessBtn = document.getElementById("submitGuessBtn");
+const passBtn = document.getElementById("passBtn");
+const playBtn = document.getElementById("playBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const trackCounterEl = document.getElementById("trackCounter");
+
+// Hide UI initially
+quizSection.style.display = "none";
+sidePanel.style.display = "none";
+playlistSelect.style.display = "none";
+repeatBtn.style.display = "none";
 
 // ---------------------------
-// SPOTIFY SDK CALLBACK
+// SCORE
+// ---------------------------
+let score = 0;
+function updateScore() {
+  scoreEl.textContent = score;
+}
+
+// ---------------------------
+// SPOTIFY SDK
 // ---------------------------
 window.onSpotifyWebPlaybackSDKReady = () => {
-  const waitForToken = setInterval(() => {
+  const wait = setInterval(() => {
     if (!accessToken) return;
-
-    clearInterval(waitForToken);
+    clearInterval(wait);
 
     player = new Spotify.Player({
       name: "Music Quiz Player",
@@ -29,12 +56,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
     player.addListener("ready", ({ device_id }) => {
       deviceId = device_id;
-      document.getElementById("playerControls").style.display = "block";
-    });
-
-    player.addListener("player_state_changed", state => {
-      document.getElementById("currentTrackDisplay").textContent =
-        state ? "🔊 Playing..." : "No track playing";
     });
 
     player.connect();
@@ -44,44 +65,34 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 // ---------------------------
 // PKCE HELPERS
 // ---------------------------
-function generateRandomString(length) {
+function generateRandomString(len) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-  return result;
+  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
-
-async function sha256(plain) {
-  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(plain));
+async function sha256(text) {
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
 }
-
-function base64encode(input) {
-  return btoa(String.fromCharCode(...new Uint8Array(input)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+function base64encode(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 // ---------------------------
 // LOGIN
 // ---------------------------
-document.getElementById("loginBtn").onclick = async () => {
-  localStorage.removeItem("code_verifier");
-
+loginBtn.onclick = async () => {
   const verifier = generateRandomString(64);
   const challenge = base64encode(await sha256(verifier));
-  localStorage.setItem("code_verifier", verifier);
+  localStorage.setItem("verifier", verifier);
 
   const scopes = [
     "streaming",
     "user-read-private",
-    "user-read-email",
-    "user-read-playback-state",
     "user-modify-playback-state",
     "playlist-read-private"
   ];
 
-  window.location.href =
+  location.href =
     "https://accounts.spotify.com/authorize" +
     `?client_id=${clientId}` +
     "&response_type=code" +
@@ -92,14 +103,11 @@ document.getElementById("loginBtn").onclick = async () => {
 };
 
 // ---------------------------
-// TOKEN EXCHANGE
+// TOKEN
 // ---------------------------
 async function exchangeToken() {
-  const code = new URLSearchParams(window.location.search).get("code");
+  const code = new URLSearchParams(location.search).get("code");
   if (!code) return;
-
-  const verifier = localStorage.getItem("code_verifier");
-  if (!verifier) return;
 
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
@@ -109,29 +117,17 @@ async function exchangeToken() {
       grant_type: "authorization_code",
       code,
       redirect_uri: redirectUri,
-      code_verifier: verifier
+      code_verifier: localStorage.getItem("verifier")
     })
   });
 
   const data = await res.json();
-  if (data.error) return;
-
   accessToken = data.access_token;
-  window.history.replaceState({}, document.title, redirectUri);
+  history.replaceState({}, "", redirectUri);
 }
 
 // ---------------------------
-// USER PROFILE
-// ---------------------------
-async function fetchUserProfile() {
-  const res = await fetch("https://api.spotify.com/v1/me", {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-  return res.json();
-}
-
-// ---------------------------
-// PLAYLISTS
+// USER / PLAYLISTS
 // ---------------------------
 async function fetchPlaylists() {
   const res = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
@@ -139,218 +135,171 @@ async function fetchPlaylists() {
   });
   const data = await res.json();
 
-  const select = document.getElementById("playlistSelect");
-  select.innerHTML = `<option value="">Choose a playlist</option>`;
-  select.style.display = "block";
-
+  playlistSelect.innerHTML = `<option value="">Choose a playlist</option>`;
   data.items.forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.name;
-    select.appendChild(opt);
+    playlistSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
   });
 }
 
 // ---------------------------
 // QUIZ STATE
 // ---------------------------
-let currentPlaylistTracks = [];
-let currentTrackIndex = 0;
-let score = 0;
-let songHistory = [];
-
-let songScoreState = {
-  title: false,
-  artist: false,
-  points: 0
-};
+let tracks = [];
+let index = 0;
+let history = [];
+let songState = { title: false, artist: false, points: 0 };
 
 // ---------------------------
-// PLAYLIST TRACKS
+// LOAD TRACKS
 // ---------------------------
-async function loadPlaylistTracks(playlistId) {
-  const res = await fetch(
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
+async function loadPlaylistTracks(id) {
+  const res = await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks?limit=50`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 
-  const data = await res.json();
-  currentPlaylistTracks = data.items.map(i => i.track).filter(Boolean).slice(0, 20);
-  shuffleArray(currentPlaylistTracks);
+  tracks = (await res.json()).items.map(i => i.track).filter(Boolean).slice(0, 20);
+  shuffle(tracks);
 
-  currentTrackIndex = 0;
+  index = 0;
   score = 0;
-  songHistory = [];
+  history = [];
   updateScore();
   renderHistory();
 
+  quizSection.style.display = "block";
   startSong();
 }
 
 // ---------------------------
 // PLAYBACK
 // ---------------------------
-async function playTrack(uri) {
+function playTrack(uri) {
   if (!deviceId) return;
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+  fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({ uris: [uri] })
   });
 }
 
-// ---------------------------
-// QUIZ LOGIC
-// ---------------------------
-document.getElementById("submitGuessBtn").onclick = () => {
-  const track = currentPlaylistTracks[currentTrackIndex];
-  const titleGuess = guessTitle.value.trim();
-  const artistGuess = guessArtist.value.trim();
-  const mainArtist = track.artists[0].name;
-
-  let gained = 0;
-
-  if (!songScoreState.title && isSimilar(titleGuess, track.name)) {
-    songScoreState.title = true;
-    gained++;
-    guessTitle.disabled = true;
-  }
-
-  if (!songScoreState.artist && isSimilar(artistGuess, mainArtist)) {
-    songScoreState.artist = true;
-    gained++;
-    guessArtist.disabled = true;
-  }
-
-  if (gained > 0) {
-    songScoreState.points += gained;
-    score += gained;
-    updateScore();
-    updateHistoryCurrent();
-  }
-
-  if (songScoreState.title && songScoreState.artist) {
-    setTimeout(nextTrack, 600);
-  }
-};
-
-// ---------------------------
-// PASS
-// ---------------------------
-document.getElementById("passBtn").onclick = () => {
-  nextTrack();
-};
+playBtn.onclick = () => player?.resume();
+pauseBtn.onclick = () => player?.pause();
 
 // ---------------------------
 // SONG FLOW
 // ---------------------------
 function startSong() {
-  const track = currentPlaylistTracks[currentTrackIndex];
+  const track = tracks[index];
+  songState = { title: false, artist: false, points: 0 };
 
-  songScoreState = { title: false, artist: false, points: 0 };
-
-  songHistory.unshift({
+  history.unshift({
     title: track.name,
     artist: track.artists[0].name,
     image: track.album.images[0]?.url || "",
     points: 0
   });
+  if (history.length > 5) history.pop();
 
-  if (songHistory.length > 5) songHistory.pop();
-
+  trackCounterEl.textContent = `${index + 1} / ${tracks.length}`;
   renderHistory();
   playTrack(track.uri);
 }
 
-function updateHistoryCurrent() {
-  songHistory[0].points = songScoreState.points;
-  renderHistory();
-}
-
-function nextTrack() {
-  currentTrackIndex++;
-  if (currentTrackIndex >= currentPlaylistTracks.length) {
-    repeatBtn.style.display = "inline-block";
+function nextSong() {
+  index++;
+  if (index >= tracks.length) {
     quizSection.style.display = "none";
+    repeatBtn.style.display = "block";
     return;
   }
-
   guessTitle.value = "";
   guessArtist.value = "";
   guessTitle.disabled = false;
   guessArtist.disabled = false;
-
   startSong();
 }
+
+// ---------------------------
+// GUESSING
+// ---------------------------
+submitGuessBtn.onclick = () => {
+  const track = tracks[index];
+  const mainArtist = track.artists[0].name;
+
+  let gained = 0;
+
+  if (!songState.title && isSimilar(guessTitle.value, track.name)) {
+    songState.title = true;
+    gained++;
+    guessTitle.disabled = true;
+  }
+  if (!songState.artist && isSimilar(guessArtist.value, mainArtist)) {
+    songState.artist = true;
+    gained++;
+    guessArtist.disabled = true;
+  }
+
+  if (gained) {
+    songState.points += gained;
+    score += gained;
+    history[0].points = songState.points;
+    updateScore();
+    renderHistory();
+  }
+
+  if (songState.title && songState.artist) setTimeout(nextSong, 600);
+};
+
+passBtn.onclick = nextSong;
+repeatBtn.onclick = () => location.reload();
 
 // ---------------------------
 // HISTORY
 // ---------------------------
 function renderHistory() {
-  history.innerHTML = "";
-  songHistory.forEach(h => {
-    history.innerHTML += `
-      <div class="history-item">
-        <img src="${h.image}" width="40">
-        <span>${h.title} – ${h.artist} (${h.points} pts)</span>
-      </div>`;
-  });
+  historyEl.innerHTML = history.map(h => `
+    <div class="history-item">
+      <img src="${h.image}" width="40">
+      <span>${h.title} – ${h.artist} (${h.points} pts)</span>
+    </div>
+  `).join("");
 }
 
 // ---------------------------
 // UTILS
 // ---------------------------
-function shuffleArray(a) {
-  for (let i = a.length - 1; i > 0; i--) {
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
-
 function isSimilar(a, b) {
-  if (!a || !b) return false;
-  a = a.toLowerCase();
-  b = b.toLowerCase();
+  a = a.toLowerCase(); b = b.toLowerCase();
   let diff = Math.abs(a.length - b.length);
-  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+  for (let i = 0; i < Math.min(a.length, b.length); i++)
     if (a[i] !== b[i]) diff++;
-  }
   return diff <= 2;
 }
 
 // ---------------------------
-// SCORE
-// ---------------------------
-function updateScore() {
-  document.getElementById("score").textContent = score;
-}
-
-
-// ---------------------------
 // INIT
 // ---------------------------
-async function initApp() {
+(async function init() {
   await exchangeToken();
   if (!accessToken) return;
-
-  const user = await fetchUserProfile();
-  if (user.product !== "premium") return;
 
   loginBtn.style.display = "none";
   playlistSelect.style.display = "block";
   sidePanel.style.display = "block";
 
   fetchPlaylists();
-}
+})();
 
-playlistSelect.addEventListener("change", e => {
-  if (e.target.value) {
-    quizSection.style.display = "block";
-    loadPlaylistTracks(e.target.value);
-  }
-});
+playlistSelect.onchange = e => {
+  if (e.target.value) loadPlaylistTracks(e.target.value);
+};
 
-initApp();
