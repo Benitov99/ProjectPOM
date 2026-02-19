@@ -322,6 +322,14 @@ function isSimilar(a, b) {
 }
 
 // ---------------------------
+// SCORE
+// ---------------------------
+function updateScore() {
+  document.getElementById("score").textContent = score;
+}
+
+
+// ---------------------------
 // INIT
 // ---------------------------
 async function initApp() {
