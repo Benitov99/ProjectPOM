@@ -44,6 +44,7 @@ document.getElementById("loginBtn").onclick = async () => {
 
   const scopes = [
     "user-read-private",
+    "user-read-email",
     "playlist-read-private",
     "playlist-read-collaborative",
     "streaming",
