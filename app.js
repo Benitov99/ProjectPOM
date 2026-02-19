@@ -244,6 +244,7 @@ async function initApp() {
     "Premium account connected 🎧";
 
 fetchPlaylists();
+console.log("fetching playlists...");
 }
 
 document.getElementById("playlistSelect")
