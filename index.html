@@ -1,44 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Music Quiz</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Music Quiz</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Project POM</h1>
+  <div class="container">
+    <h1>🎵 Music Quiz</h1>
+    <p id="status">Not connected</p>
 
-  <button id="loginBtn">Login with Spotify</button>
+    <button id="loginBtn">Login with Spotify</button>
 
-  <p id="status">Not connected</p>
+    <select id="playlistSelect" style="display:none;"></select>
 
-<select id="playlistSelect" style="display:none">
-  <option value="">Choose a playlist</option>
-</select>
+    <div id="playerControls" style="display:none;">
+      <p id="currentTrackDisplay">No track playing</p>
+      <button id="playBtn">Play</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="nextBtn">Next Track</button>
+    </div>
 
+    <div id="quizSection" style="display:none;">
+      <h2 id="quizPrompt">Track 1 of 20</h2>
 
-<p id="playlistStatus"></p>
+      <div class="inputs">
+        <input type="text" id="guessTitle" placeholder="Enter Track Title">
+        <input type="text" id="guessArtist" placeholder="Enter Artist Name">
+      </div>
 
-<div id="quizSection" style="display:none;">
-  <p id="quizPrompt">Press "Start Quiz" to begin</p>
-  <input type="text" id="guessInput" placeholder="Type title or artist" />
-  <button id="submitGuessBtn">Submit Guess</button>
-  <p id="feedback"></p>
-  <p>Score: <span id="score">0</span></p>
-  <button id="nextTrackBtn">Next Track</button>
-</div>
+      <button id="submitGuessBtn">Submit Guess</button>
 
-<button id="startQuizBtn" style="display:none;">Start Quiz</button>
+      <p id="feedback"></p>
+      <p>Score: <span id="score">0</span></p>
+    </div>
+  </div>
 
-<div id="playerControls" style="display:none;">
-  <button id="playBtn">Play</button>
-  <button id="pauseBtn">Pause</button>
-  <button id="nextBtn">Next Track</button>
-  <p id="currentTrackDisplay">No track playing</p>
-</div>
-
-<script src="app.js?v=FINAL" defer></script>
-<script src="https://sdk.scdn.co/spotify-player.js"></script>
-  
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <script src="app.js?v=FINAL" defer></script>
 </body>
 </html>

@@ -19,3 +19,77 @@ button {
 button:hover {
   opacity: 0.9;
 }
+body {
+  font-family: Arial, sans-serif;
+  background: #121212;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 500px;
+  margin: 2rem auto;
+  text-align: center;
+  padding: 1rem;
+  background: #1e1e1e;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.6);
+}
+
+h1 {
+  margin-bottom: 1rem;
+  color: #1db954;
+}
+
+button {
+  background-color: #1db954;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  margin: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button:hover {
+  background-color: #1ed760;
+}
+
+input {
+  padding: 0.5rem;
+  margin: 0.3rem;
+  border-radius: 8px;
+  border: none;
+  width: 45%;
+}
+
+select {
+  padding: 0.5rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+}
+
+#currentTrackDisplay {
+  margin: 1rem 0;
+  font-weight: bold;
+}
+
+.inputs {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+#feedback {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+#score {
+  font-weight: bold;
+  color: #1db954;
+}

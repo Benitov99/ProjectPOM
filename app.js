@@ -23,25 +23,16 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       volume: 0.8
     });
 
-    // ---------------------------
-    // READY
-    // ---------------------------
     player.addListener("ready", ({ device_id }) => {
       deviceId = device_id;
       document.getElementById("playerControls").style.display = "block";
       console.log("Spotify Player ready:", deviceId);
     });
 
-    // ---------------------------
-    // AUTH & ACCOUNT ERRORS
-    // ---------------------------
     player.addListener("authentication_error", e => console.error("Auth error", e));
     player.addListener("account_error", e => console.error("Account error", e));
     player.addListener("initialization_error", e => console.error("Init error", e));
 
-    // ---------------------------
-    // TRACK STATE
-    // ---------------------------
     player.addListener("player_state_changed", state => {
       if (!state || !state.track_window) {
         document.getElementById("currentTrackDisplay").textContent = "No track playing";
@@ -187,23 +178,26 @@ async function loadPlaylistTracks(playlistId) {
   });
 
   const data = await res.json();
-  currentPlaylistTracks = data.items.map(i => i.track).filter(Boolean);
+  currentPlaylistTracks = data.items
+    .map(i => i.track)
+    .filter(Boolean)
+    .slice(0, 20); // only first 20 tracks for quiz
 
   if (!currentPlaylistTracks.length) {
     alert("Playlist has no playable tracks");
     return;
   }
 
-  // Play first track
   currentTrackIndex = 0;
+  score = 0;
+  updateScore();
+  showQuizControls();
+
   playTrack(currentPlaylistTracks[0].uri);
-  document.getElementById("playBtn").disabled = false;
-  document.getElementById("pauseBtn").disabled = false;
-  document.getElementById("nextBtn").disabled = false;
 }
 
 // ---------------------------
-// PLAYBACK CONTROLS
+// PLAYBACK
 // ---------------------------
 async function playTrack(uri) {
   if (!deviceId || !accessToken) return;
@@ -229,22 +223,67 @@ document.getElementById("pauseBtn").onclick = () => {
 };
 
 document.getElementById("nextBtn").onclick = () => {
-  if (!currentPlaylistTracks.length) return;
-  currentTrackIndex++;
-  if (currentTrackIndex >= currentPlaylistTracks.length) currentTrackIndex = 0; // loop
-  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
+  nextTrack();
 };
 
 // ---------------------------
-// QUIZ STATE
+// QUIZ LOGIC
+// ---------------------------
+function updateScore() {
+  document.getElementById("score").textContent = score;
+}
+
+function showQuizControls() {
+  document.getElementById("quizSection").style.display = "block";
+  document.getElementById("guessTitle").value = "";
+  document.getElementById("guessArtist").value = "";
+  document.getElementById("feedback").textContent = "";
+  updateScore();
+}
+
+document.getElementById("submitGuessBtn").onclick = () => {
+  const track = currentPlaylistTracks[currentTrackIndex];
+  if (!track) return;
+
+  const titleGuess = document.getElementById("guessTitle").value.toLowerCase().trim();
+  const artistGuess = document.getElementById("guessArtist").value.toLowerCase().trim();
+
+  let correct = false;
+
+  if (titleGuess === track.name.toLowerCase() || artistGuess === track.artists.map(a => a.name).join(", ").toLowerCase()) {
+    correct = true;
+    score++;
+    document.getElementById("feedback").textContent = "✅ Correct!";
+  } else {
+    document.getElementById("feedback").textContent =
+      `❌ Wrong! Title: ${track.name}, Artist: ${track.artists.map(a => a.name).join(", ")}`;
+  }
+
+  updateScore();
+  nextTrack();
+};
+
+function nextTrack() {
+  currentTrackIndex++;
+  if (currentTrackIndex >= currentPlaylistTracks.length) {
+    document.getElementById("quizPrompt").textContent = "🎉 Quiz finished!";
+    return;
+  }
+  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
+  document.getElementById("guessTitle").value = "";
+  document.getElementById("guessArtist").value = "";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("quizPrompt").textContent =
+    `Track ${currentTrackIndex + 1} of ${currentPlaylistTracks.length}`;
+}
+
+// ---------------------------
+// INIT
 // ---------------------------
 let currentPlaylistTracks = [];
 let currentTrackIndex = 0;
 let score = 0;
 
-// ---------------------------
-// INIT
-// ---------------------------
 async function initApp() {
   await exchangeToken();
   if (!accessToken) return;
@@ -256,7 +295,6 @@ async function initApp() {
   }
 
   document.getElementById("status").textContent = "Premium account connected 🎧";
-
   await fetchPlaylists();
 }
 
