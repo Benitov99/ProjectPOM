@@ -15,7 +15,7 @@ const loginBtn = document.getElementById("loginBtn");
 const quizSection = document.getElementById("quizSection");
 const sidePanel = document.getElementById("sidePanel");
 const playlistSelect = document.getElementById("playlistSelect");
-const historyEl = document.getElementById("history");
+const historyPanel = document.getElementById("history");
 const scoreEl = document.getElementById("score");
 const guessTitle = document.getElementById("guessTitle");
 const guessArtist = document.getElementById("guessArtist");
@@ -83,11 +83,13 @@ function base64encode(buf) {
 loginBtn.onclick = async () => {
   const verifier = generateRandomString(64);
   const challenge = base64encode(await sha256(verifier));
-  localStorage.setItem("verifier", verifier);
+  localStorage.setItem("code_verifier", verifier);
 
   const scopes = [
     "streaming",
     "user-read-private",
+    "user-read-email",
+    "user-read-playback-state",
     "user-modify-playback-state",
     "playlist-read-private"
   ];
@@ -106,7 +108,7 @@ loginBtn.onclick = async () => {
 // TOKEN
 // ---------------------------
 async function exchangeToken() {
-  if (accessToken) return; // ⬅️ PREVENT DOUBLE RUN
+  if (accessToken) return;
 
   const params = new URLSearchParams(window.location.search);
   const code = params.get("code");
@@ -134,11 +136,8 @@ async function exchangeToken() {
   }
 
   accessToken = data.access_token;
-
-  // IMPORTANT: remove code from URL once
   window.history.replaceState({}, document.title, redirectUri);
-
-showQuizUI();
+  showQuizUI();
 }
 
 // ---------------------------
@@ -161,7 +160,7 @@ async function fetchPlaylists() {
 // ---------------------------
 let tracks = [];
 let index = 0;
-let history = [];
+let songHistory = [];
 let songState = { title: false, artist: false, points: 0 };
 
 // ---------------------------
@@ -177,7 +176,7 @@ async function loadPlaylistTracks(id) {
 
   index = 0;
   score = 0;
-  history = [];
+  songHistory = [];
   updateScore();
   renderHistory();
 
@@ -210,13 +209,14 @@ function startSong() {
   const track = tracks[index];
   songState = { title: false, artist: false, points: 0 };
 
-  history.unshift({
+  // add to history (latest on top, max 5)
+  songHistory.unshift({
     title: track.name,
     artist: track.artists[0].name,
     image: track.album.images[0]?.url || "",
     points: 0
   });
-  if (history.length > 5) history.pop();
+  if (songHistory.length > 5) songHistory.pop();
 
   trackCounterEl.textContent = `${index + 1} / ${tracks.length}`;
   renderHistory();
@@ -230,6 +230,7 @@ function nextSong() {
     repeatBtn.style.display = "block";
     return;
   }
+
   guessTitle.value = "";
   guessArtist.value = "";
   guessTitle.disabled = false;
@@ -260,7 +261,7 @@ submitGuessBtn.onclick = () => {
   if (gained) {
     songState.points += gained;
     score += gained;
-    history[0].points = songState.points;
+    songHistory[0].points = songState.points;
     updateScore();
     renderHistory();
   }
@@ -274,19 +275,16 @@ repeatBtn.onclick = () => location.reload();
 // ---------------------------
 // HISTORY
 // ---------------------------
-const historyEl = document.getElementById("history");
-
 function renderHistory() {
-  historyEl.innerHTML = "";
+  historyPanel.innerHTML = "";
   songHistory.forEach(h => {
-    historyEl.innerHTML += `
+    historyPanel.innerHTML += `
       <div class="history-item">
         <img src="${h.image}" width="40">
         <span>${h.title} – ${h.artist} (${h.points} pts)</span>
       </div>`;
   });
 }
-
 
 // ---------------------------
 // UTILS
@@ -305,12 +303,14 @@ function isSimilar(a, b) {
   return diff <= 2;
 }
 
+// ---------------------------
+// UI SHOW
+// ---------------------------
 function showQuizUI() {
   loginBtn.style.display = "none";
   playlistSelect.style.display = "block";
   sidePanel.style.display = "block";
 }
-
 
 // ---------------------------
 // INIT
@@ -319,12 +319,10 @@ function showQuizUI() {
   await exchangeToken();
   if (!accessToken) return;
 
-showQuizUI();
-fetchPlaylists();
-
+  showQuizUI();
+  fetchPlaylists();
 })();
 
 playlistSelect.onchange = e => {
   if (e.target.value) loadPlaylistTracks(e.target.value);
 };
-
