@@ -226,55 +226,91 @@ document.getElementById("nextBtn").onclick = () => {
   nextTrack();
 };
 
+// Remove login button
+document.getElementById("loginBtn").style.display = "none";
+
+// Show playlist dropdown
+document.getElementById("playlistSelect").style.display = "block";
+
+
 // ---------------------------
 // QUIZ LOGIC
 // ---------------------------
-function updateScore() {
-  document.getElementById("score").textContent = score;
-}
-
-function showQuizControls() {
-  document.getElementById("quizSection").style.display = "block";
-  document.getElementById("guessTitle").value = "";
-  document.getElementById("guessArtist").value = "";
-  document.getElementById("feedback").textContent = "";
-  updateScore();
-}
-
 document.getElementById("submitGuessBtn").onclick = () => {
+  const titleInput = document.getElementById("guessTitle");
+  const artistInput = document.getElementById("guessArtist");
+
+  const titleGuess = titleInput.value.toLowerCase().trim();
+  const artistGuess = artistInput.value.toLowerCase().trim();
+
   const track = currentPlaylistTracks[currentTrackIndex];
   if (!track) return;
 
-  const titleGuess = document.getElementById("guessTitle").value.toLowerCase().trim();
-  const artistGuess = document.getElementById("guessArtist").value.toLowerCase().trim();
+  let pointsEarned = 0;
+  let feedbackMsg = "";
 
-  let correct = false;
-
-  if (titleGuess === track.name.toLowerCase() || artistGuess === track.artists.map(a => a.name).join(", ").toLowerCase()) {
-    correct = true;
-    score++;
-    document.getElementById("feedback").textContent = "✅ Correct!";
-  } else {
-    document.getElementById("feedback").textContent =
-      `❌ Wrong! Title: ${track.name}, Artist: ${track.artists.map(a => a.name).join(", ")}`;
+  // Check title
+  if (titleGuess && titleGuess === track.name.toLowerCase()) {
+    pointsEarned++;
+    feedbackMsg += "✅ Title correct! ";
+    titleInput.disabled = true;  // Lock correct input
   }
 
-  updateScore();
+  // Check artist
+  if (artistGuess && artistGuess === track.artists.map(a=>a.name).join(", ").toLowerCase()) {
+    pointsEarned++;
+    feedbackMsg += "✅ Artist correct! ";
+    artistInput.disabled = true;  // Lock correct input
+  }
+
+  if (pointsEarned === 0) {
+    feedbackMsg = "❌ Try again!";
+  } else {
+    score += pointsEarned;
+    document.getElementById("score").textContent = score;
+  }
+
+  document.getElementById("feedback").textContent = feedbackMsg;
+
+  // If both correct, move to next track
+  if (pointsEarned === 2) {
+    setTimeout(nextTrack, 1000);
+  }
+};
+
+// ---------------------------
+// PASS BUTTON
+// ---------------------------
+document.getElementById("passBtn").onclick = () => {
+  score++;
+  document.getElementById("score").textContent = score;
   nextTrack();
 };
 
+// ---------------------------
+// NEXT TRACK HELPER
+// ---------------------------
 function nextTrack() {
   currentTrackIndex++;
-  if (currentTrackIndex >= currentPlaylistTracks.length) {
-    document.getElementById("quizPrompt").textContent = "🎉 Quiz finished!";
+  if (currentTrackIndex >= currentPlaylistTracks.length || currentTrackIndex >= 20) {
+    document.getElementById("quizPrompt").textContent = "Quiz finished!";
+    document.getElementById("quizSection").style.display = "none";
     return;
   }
-  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
-  document.getElementById("guessTitle").value = "";
-  document.getElementById("guessArtist").value = "";
+
+  // Reset inputs
+  const titleInput = document.getElementById("guessTitle");
+  const artistInput = document.getElementById("guessArtist");
+  titleInput.value = "";
+  titleInput.disabled = false;
+  artistInput.value = "";
+  artistInput.disabled = false;
+
   document.getElementById("feedback").textContent = "";
-  document.getElementById("quizPrompt").textContent =
-    `Track ${currentTrackIndex + 1} of ${currentPlaylistTracks.length}`;
+  document.getElementById("quizPrompt").textContent = `Track ${currentTrackIndex + 1} of 20`;
+
+  // Play next track
+  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
 }
 
 // ---------------------------
