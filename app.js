@@ -9,7 +9,7 @@ let player = null;
 let deviceId = null;
 
 // ---------------------------
-// SPOTIFY SDK CALLBACK (MUST EXIST IMMEDIATELY)
+// SPOTIFY SDK CALLBACK
 // ---------------------------
 window.onSpotifyWebPlaybackSDKReady = () => {
   const waitForToken = setInterval(() => {
@@ -23,22 +23,33 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       volume: 0.8
     });
 
+    // ---------------------------
+    // READY
+    // ---------------------------
     player.addListener("ready", ({ device_id }) => {
       deviceId = device_id;
       document.getElementById("playerControls").style.display = "block";
       console.log("Spotify Player ready:", deviceId);
     });
 
-    player.addListener("authentication_error", e => {
-      console.error("Auth error", e);
-    });
+    // ---------------------------
+    // AUTH & ACCOUNT ERRORS
+    // ---------------------------
+    player.addListener("authentication_error", e => console.error("Auth error", e));
+    player.addListener("account_error", e => console.error("Account error", e));
+    player.addListener("initialization_error", e => console.error("Init error", e));
 
-    player.addListener("account_error", e => {
-      console.error("Account error", e);
-    });
-
-    player.addListener("initialization_error", e => {
-      console.error("Init error", e);
+    // ---------------------------
+    // TRACK STATE
+    // ---------------------------
+    player.addListener("player_state_changed", state => {
+      if (!state || !state.track_window) {
+        document.getElementById("currentTrackDisplay").textContent = "No track playing";
+        return;
+      }
+      const current = state.track_window.current_track;
+      document.getElementById("currentTrackDisplay").textContent =
+        `${current.name} - ${current.artists.map(a => a.name).join(", ")}`;
     });
 
     player.connect();
@@ -51,9 +62,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 function generateRandomString(length) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
   return result;
 }
 
@@ -105,8 +114,7 @@ document.getElementById("loginBtn").onclick = async () => {
 // TOKEN EXCHANGE
 // ---------------------------
 async function exchangeToken() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
+  const code = new URLSearchParams(window.location.search).get("code");
   if (!code) return;
 
   const verifier = localStorage.getItem("code_verifier");
@@ -134,7 +142,7 @@ async function exchangeToken() {
 
   accessToken = data.access_token;
 
-  // Clean URL (important!)
+  // Clean URL
   window.history.replaceState({}, document.title, redirectUri);
 
   document.getElementById("status").textContent = "Connected to Spotify ✅";
@@ -150,22 +158,20 @@ async function fetchUserProfile() {
   return res.json();
 }
 
-//----------------------------
+// ---------------------------
 // PLAYLISTS
-//----------------------------
+// ---------------------------
 async function fetchPlaylists() {
-  const res = await fetch(
-    "https://api.spotify.com/v1/me/playlists?limit=50",
-    {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }
-  );
-
+  const res = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
   const data = await res.json();
   if (!data.items) return;
 
   const select = document.getElementById("playlistSelect");
   select.innerHTML = `<option value="">Choose a playlist</option>`;
+  select.style.display = "block";
+  select.style.margin = "0 auto"; // center dropdown
 
   data.items.forEach(p => {
     const opt = document.createElement("option");
@@ -173,50 +179,61 @@ async function fetchPlaylists() {
     opt.textContent = p.name;
     select.appendChild(opt);
   });
-
-  select.style.display = "block";
 }
+
 async function loadPlaylistTracks(playlistId) {
-  const res = await fetch(
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }
-  );
+  const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
 
   const data = await res.json();
-  currentPlaylistTracks = data.items
-    .map(i => i.track)
-    .filter(Boolean);
+  currentPlaylistTracks = data.items.map(i => i.track).filter(Boolean);
 
-  if (currentPlaylistTracks.length === 0) {
+  if (!currentPlaylistTracks.length) {
     alert("Playlist has no playable tracks");
     return;
   }
 
-  // 🔊 PLAY FIRST TRACK (proof audio works)
+  // Play first track
+  currentTrackIndex = 0;
   playTrack(currentPlaylistTracks[0].uri);
+  document.getElementById("playBtn").disabled = false;
+  document.getElementById("pauseBtn").disabled = false;
+  document.getElementById("nextBtn").disabled = false;
 }
 
-
 // ---------------------------
-// PLAYBACK
+// PLAYBACK CONTROLS
 // ---------------------------
 async function playTrack(uri) {
   if (!deviceId || !accessToken) return;
 
-  await fetch(
-    `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({ uris: [uri] })
-    }
-  );
+  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({ uris: [uri] })
+  });
 }
+
+document.getElementById("playBtn").onclick = () => {
+  if (!currentPlaylistTracks.length) return;
+  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
+};
+
+document.getElementById("pauseBtn").onclick = () => {
+  if (!player) return;
+  player.pause();
+};
+
+document.getElementById("nextBtn").onclick = () => {
+  if (!currentPlaylistTracks.length) return;
+  currentTrackIndex++;
+  if (currentTrackIndex >= currentPlaylistTracks.length) currentTrackIndex = 0; // loop
+  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
+};
 
 // ---------------------------
 // QUIZ STATE
@@ -226,32 +243,26 @@ let currentTrackIndex = 0;
 let score = 0;
 
 // ---------------------------
-// INIT (SINGLE ENTRY POINT)
+// INIT
 // ---------------------------
 async function initApp() {
   await exchangeToken();
   if (!accessToken) return;
 
   const user = await fetchUserProfile();
-
   if (user.product !== "premium") {
-    document.getElementById("status").textContent =
-      "Spotify Premium required ❌";
+    document.getElementById("status").textContent = "Spotify Premium required ❌";
     return;
   }
 
-  document.getElementById("status").textContent =
-    "Premium account connected 🎧";
+  document.getElementById("status").textContent = "Premium account connected 🎧";
 
-fetchPlaylists();
-console.log("fetching playlists...");
+  await fetchPlaylists();
 }
 
-document.getElementById("playlistSelect")
-  .addEventListener("change", e => {
-    if (!e.target.value) return;
-    loadPlaylistTracks(e.target.value);
-  });
-
+document.getElementById("playlistSelect").addEventListener("change", e => {
+  if (!e.target.value) return;
+  loadPlaylistTracks(e.target.value);
+});
 
 initApp();
