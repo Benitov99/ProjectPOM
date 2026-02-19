@@ -9,7 +9,44 @@ let player = null;
 let deviceId = null;
 
 // ---------------------------
-// PKCE helpers
+// SPOTIFY SDK CALLBACK (MUST EXIST IMMEDIATELY)
+// ---------------------------
+window.onSpotifyWebPlaybackSDKReady = () => {
+  const waitForToken = setInterval(() => {
+    if (!accessToken) return;
+
+    clearInterval(waitForToken);
+
+    player = new Spotify.Player({
+      name: "Music Quiz Player",
+      getOAuthToken: cb => cb(accessToken),
+      volume: 0.8
+    });
+
+    player.addListener("ready", ({ device_id }) => {
+      deviceId = device_id;
+      document.getElementById("playerControls").style.display = "block";
+      console.log("Spotify Player ready:", deviceId);
+    });
+
+    player.addListener("authentication_error", e => {
+      console.error("Auth error", e);
+    });
+
+    player.addListener("account_error", e => {
+      console.error("Account error", e);
+    });
+
+    player.addListener("initialization_error", e => {
+      console.error("Init error", e);
+    });
+
+    player.connect();
+  }, 300);
+};
+
+// ---------------------------
+// PKCE HELPERS
 // ---------------------------
 function generateRandomString(length) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -43,13 +80,13 @@ document.getElementById("loginBtn").onclick = async () => {
   localStorage.setItem("code_verifier", verifier);
 
   const scopes = [
+    "streaming",
     "user-read-private",
     "user-read-email",
-    "playlist-read-private",
-    "playlist-read-collaborative",
-    "streaming",
     "user-read-playback-state",
-    "user-modify-playback-state"
+    "user-modify-playback-state",
+    "playlist-read-private",
+    "playlist-read-collaborative"
   ];
 
   const authUrl =
@@ -68,7 +105,8 @@ document.getElementById("loginBtn").onclick = async () => {
 // TOKEN EXCHANGE
 // ---------------------------
 async function exchangeToken() {
-  const code = new URLSearchParams(window.location.search).get("code");
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
   if (!code) return;
 
   const verifier = localStorage.getItem("code_verifier");
@@ -89,9 +127,16 @@ async function exchangeToken() {
   });
 
   const data = await res.json();
-  if (data.error) throw data;
+  if (data.error) {
+    console.error("Token error", data);
+    return;
+  }
 
   accessToken = data.access_token;
+
+  // Clean URL (important!)
+  window.history.replaceState({}, document.title, redirectUri);
+
   document.getElementById("status").textContent = "Connected to Spotify ✅";
 }
 
@@ -106,33 +151,23 @@ async function fetchUserProfile() {
 }
 
 // ---------------------------
-// SPOTIFY SDK CALLBACK (MUST BE GLOBAL)
+// PLAYBACK
 // ---------------------------
-window.onSpotifyWebPlaybackSDKReady = () => {
-  const waitForToken = setInterval(() => {
-    if (!accessToken) return;
+async function playTrack(uri) {
+  if (!deviceId || !accessToken) return;
 
-    clearInterval(waitForToken);
-
-    player = new Spotify.Player({
-      name: "Music Quiz Player",
-      getOAuthToken: cb => cb(accessToken)
-    });
-
-    player.addListener("ready", ({ device_id }) => {
-      deviceId = device_id;
-      document.getElementById("playerControls").style.display = "block";
-      console.log("Spotify Player ready:", deviceId);
-    });
-
-    player.addListener("authentication_error", e => {
-      console.error("Auth error", e);
-    });
-
-    player.connect();
-  }, 300);
-};
-
+  await fetch(
+    `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({ uris: [uri] })
+    }
+  );
+}
 
 // ---------------------------
 // QUIZ STATE
@@ -142,21 +177,6 @@ let currentTrackIndex = 0;
 let score = 0;
 
 // ---------------------------
-// PLAYBACK
-// ---------------------------
-async function playTrack(uri) {
-  if (!deviceId) return;
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${accessToken}`
-    },
-    body: JSON.stringify({ uris: [uri] })
-  });
-}
-
-// ---------------------------
 // INIT (SINGLE ENTRY POINT)
 // ---------------------------
 async function initApp() {
@@ -164,12 +184,15 @@ async function initApp() {
   if (!accessToken) return;
 
   const user = await fetchUserProfile();
+
   if (user.product !== "premium") {
-    document.getElementById("status").textContent = "Premium required ❌";
+    document.getElementById("status").textContent =
+      "Spotify Premium required ❌";
     return;
   }
 
-  document.getElementById("status").textContent = "Premium account 🎧";
+  document.getElementById("status").textContent =
+    "Premium account connected 🎧";
 }
 
 initApp();
