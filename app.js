@@ -106,8 +106,14 @@ loginBtn.onclick = async () => {
 // TOKEN
 // ---------------------------
 async function exchangeToken() {
-  const code = new URLSearchParams(location.search).get("code");
+  if (accessToken) return; // ⬅️ PREVENT DOUBLE RUN
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
   if (!code) return;
+
+  const verifier = localStorage.getItem("code_verifier");
+  if (!verifier) return;
 
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
@@ -117,13 +123,21 @@ async function exchangeToken() {
       grant_type: "authorization_code",
       code,
       redirect_uri: redirectUri,
-      code_verifier: localStorage.getItem("verifier")
+      code_verifier: verifier
     })
   });
 
   const data = await res.json();
+  if (data.error) {
+    console.error("Token error:", data);
+    return;
+  }
+
   accessToken = data.access_token;
-  history.replaceState({}, "", redirectUri);
+
+  // IMPORTANT: remove code from URL once
+  window.history.replaceState({}, document.title, redirectUri);
+
 showQuizUI();
 }
 
@@ -260,14 +274,19 @@ repeatBtn.onclick = () => location.reload();
 // ---------------------------
 // HISTORY
 // ---------------------------
+const historyEl = document.getElementById("history");
+
 function renderHistory() {
-  historyEl.innerHTML = history.map(h => `
-    <div class="history-item">
-      <img src="${h.image}" width="40">
-      <span>${h.title} – ${h.artist} (${h.points} pts)</span>
-    </div>
-  `).join("");
+  historyEl.innerHTML = "";
+  songHistory.forEach(h => {
+    historyEl.innerHTML += `
+      <div class="history-item">
+        <img src="${h.image}" width="40">
+        <span>${h.title} – ${h.artist} (${h.points} pts)</span>
+      </div>`;
+  });
 }
+
 
 // ---------------------------
 // UTILS
