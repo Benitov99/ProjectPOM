@@ -124,6 +124,7 @@ async function exchangeToken() {
   const data = await res.json();
   accessToken = data.access_token;
   history.replaceState({}, "", redirectUri);
+showQuizUI();
 }
 
 // ---------------------------
@@ -299,11 +300,9 @@ function showQuizUI() {
   await exchangeToken();
   if (!accessToken) return;
 
-  loginBtn.style.display = "none";
-  playlistSelect.style.display = "block";
-  sidePanel.style.display = "block";
+showQuizUI();
+fetchPlaylists();
 
-  fetchPlaylists();
 })();
 
 playlistSelect.onchange = e => {
