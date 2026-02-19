@@ -150,6 +150,55 @@ async function fetchUserProfile() {
   return res.json();
 }
 
+//----------------------------
+// PLAYLISTS
+//----------------------------
+async function fetchPlaylists() {
+  const res = await fetch(
+    "https://api.spotify.com/v1/me/playlists?limit=50",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    }
+  );
+
+  const data = await res.json();
+  if (!data.items) return;
+
+  const select = document.getElementById("playlistSelect");
+  select.innerHTML = `<option value="">Choose a playlist</option>`;
+
+  data.items.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    select.appendChild(opt);
+  });
+
+  select.style.display = "block";
+}
+async function loadPlaylistTracks(playlistId) {
+  const res = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    }
+  );
+
+  const data = await res.json();
+  currentPlaylistTracks = data.items
+    .map(i => i.track)
+    .filter(Boolean);
+
+  if (currentPlaylistTracks.length === 0) {
+    alert("Playlist has no playable tracks");
+    return;
+  }
+
+  // 🔊 PLAY FIRST TRACK (proof audio works)
+  playTrack(currentPlaylistTracks[0].uri);
+}
+
+
 // ---------------------------
 // PLAYBACK
 // ---------------------------
@@ -193,6 +242,15 @@ async function initApp() {
 
   document.getElementById("status").textContent =
     "Premium account connected 🎧";
+
+fetchPlaylists();
 }
+
+document.getElementById("playlistSelect")
+  .addEventListener("change", e => {
+    if (!e.target.value) return;
+    loadPlaylistTracks(e.target.value);
+  });
+
 
 initApp();
