@@ -8,6 +8,11 @@ let accessToken = null;
 let player = null;
 let deviceId = null;
 
+document.getElementById("quizSection").style.display = "none";
+document.getElementById("sidePanel").style.display = "none";
+document.getElementById("playlistSelect").style.display = "none";
+
+
 // ---------------------------
 // SPOTIFY SDK CALLBACK
 // ---------------------------
@@ -212,6 +217,15 @@ async function loadPlaylistTracks(playlistId) {
 
   playTrack(currentPlaylistTracks[0].uri);
 }
+
+document.getElementById("playlistSelect").addEventListener("change", e => {
+  const playlistId = e.target.value;
+  if (!playlistId) return;
+
+  document.getElementById("quizSection").style.display = "block";
+  loadPlaylistTracks(playlistId);
+});
+
 
 // ---------------------------
 // PLAYBACK
@@ -419,10 +433,12 @@ async function initApp() {
   }
 
   document.getElementById("status").textContent = "Premium account connected 🎧";
-  document.getElementById("loginBtn").style.display = "none";
-  document.getElementById("playlistSelect").style.display = "block";
+document.getElementById("loginBtn").style.display = "none";
+document.getElementById("playlistSelect").style.display = "block";
+document.getElementById("sidePanel").style.display = "block";
 
-  fetchPlaylists();
+fetchPlaylists();
+
 }
 
 initApp();

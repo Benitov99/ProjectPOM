@@ -84,3 +84,9 @@ button {
 .history-item img {
   border-radius: 4px;
 }
+
+#playlistSelect {
+  max-width: 300px;
+  margin: 10px auto;
+  display: block;
+}
