@@ -1,46 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>Spotify Music Quiz</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </head>
+
 <body>
+  <h1>🎵 Project POM</h1>
 
-
+  <div id="topBar">
     <button id="loginBtn">Login with Spotify</button>
+    <select id="playlistSelect" style="display:none"></select>
+    <span id="status"></span>
+  </div>
 
-  <div class="container">
-    <h1>🎵 Project POM</h1>
-    <p id="status">Not connected</p>
+  <div id="mainLayout">
+    <!-- QUIZ AREA -->
+    <div id="quizSection" style="display:none">
+      <div id="currentTrackDisplay">🔊 Playing...</div>
 
-    <select id="playlistSelect" style="display:none;"></select>
+      <p id="quizPrompt">Track 1 of 20</p>
 
-    <div id="playerControls" style="display:none;">
-      <p id="currentTrackDisplay">No track playing</p>
-      <button id="playBtn">Play</button>
-      <button id="pauseBtn">Pause</button>
+      <input id="guessTitle" placeholder="Guess song title" />
+      <input id="guessArtist" placeholder="Guess artist" />
+
+      <div class="buttons">
+        <button id="submitGuessBtn">Submit</button>
+        <button id="passBtn">Pass</button>
+      </div>
+
+      <p id="feedback"></p>
+
+      <div id="playerControls">
+        <button id="playBtn">▶️</button>
+        <button id="pauseBtn">⏸️</button>
+        <button id="nextBtn">⏭️</button>
+      </div>
+
+      <button id="repeatBtn" style="display:none">🔁 Restart Quiz</button>
     </div>
 
- <div id="quizSection" style="display:none;">
-  <h2 id="quizPrompt">Track 1 of 20</h2>
+    <!-- RIGHT SIDEBAR -->
+    <div id="sidePanel">
+      <div class="scoreBox">
+        <h2>Score</h2>
+        <div id="score">0</div>
+      </div>
 
-  <div class="inputs">
-    <input type="text" id="guessTitle" placeholder="Enter Track Title">
-    <input type="text" id="guessArtist" placeholder="Enter Artist Name">
+      <div class="historyBox">
+        <h3>History</h3>
+        <div id="history"></div>
+      </div>
+    </div>
   </div>
 
-  <button id="submitGuessBtn">Submit Guess</button>
-  <button id="passBtn">Pass</button>
-
-  <p id="feedback"></p>
-  <p>Score: <span id="score">0</span></p>
-</div>
-
-  </div>
-
-  <script src="https://sdk.scdn.co/spotify-player.js"></script>
-  <script src="app.js?v=FINAL" defer></script>
+  <script src="app.js"></script>
 </body>
 </html>
