@@ -285,6 +285,13 @@ function isSimilar(a, b) {
   return diff <= 2;
 }
 
+function showQuizUI() {
+  loginBtn.style.display = "none";
+  playlistSelect.style.display = "block";
+  sidePanel.style.display = "block";
+}
+
+
 // ---------------------------
 // INIT
 // ---------------------------
