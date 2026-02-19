@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
     songState = { title: false, artist: false, points: 0 };
 
  renderHistoryPanel();
-    playTrack(track.uri);
+    
 
     songHistory.unshift({
       title: track.name,
@@ -223,6 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (songHistory.length > 5) songHistory.pop();
 
     trackCounterEl.textContent = `${index + 1} / ${tracks.length}`;
+
+playTrack(track.uri);
    
   }
 
