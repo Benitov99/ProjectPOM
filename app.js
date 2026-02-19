@@ -184,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     score = 0;
     songHistory = [];
     updateScore();
-    renderHistory();
+    renderHistoryPanel();
 
     quizSection.style.display = "block";
     startSong();
