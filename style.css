@@ -78,6 +78,11 @@ select {
   font-weight: bold;
 }
 
+#loginBtn {
+  display: inline-block; /* must be visible initially */
+  margin-bottom: 1rem;
+}
+
 .inputs {
   display: flex;
   justify-content: space-between;

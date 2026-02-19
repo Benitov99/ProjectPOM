@@ -326,17 +326,23 @@ async function initApp() {
 
   const user = await fetchUserProfile();
   if (user.product !== "premium") {
-    document.getElementById("status").textContent = "Spotify Premium required ❌";
+    document.getElementById("status").textContent =
+      "Spotify Premium required ❌";
     return;
   }
 
+  // ✅ Successfully logged in
   document.getElementById("status").textContent = "Premium account connected 🎧";
-  await fetchPlaylists();
+
+  // Hide login button now
+  document.getElementById("loginBtn").style.display = "none";
+
+  // Show playlist dropdown
+  document.getElementById("playlistSelect").style.display = "block";
+
+  // Load playlists
+  fetchPlaylists();
 }
 
-document.getElementById("playlistSelect").addEventListener("change", e => {
-  if (!e.target.value) return;
-  loadPlaylistTracks(e.target.value);
-});
 
 initApp();
