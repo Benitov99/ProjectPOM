@@ -211,42 +211,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const track = tracks[index];
     songState = { title: false, artist: false, points: 0 };
 
-   
+ renderHistoryPanel();
+    playTrack(track.uri);
+
+    songHistory.unshift({
+      title: track.name,
+      artist: track.artists[0].name,
+      image: track.album.images[0]?.url || "",
+      points: 0
+    });
+    if (songHistory.length > 5) songHistory.pop();
 
     trackCounterEl.textContent = `${index + 1} / ${tracks.length}`;
-    renderHistoryPanel();
-    playTrack(track.uri);
+   
   }
 
- function nextSong() {
-  // Push previous song to history
-  const prevTrack = tracks[index];
-  if (prevTrack) {
-    history.unshift({
-      title: prevTrack.name,
-      artist: prevTrack.artists[0].name,
-      image: prevTrack.album.images[0]?.url || "",
-      points: songState.points
-    });
-    if (history.length > 5) history.pop(); // keep last 5 songs
-    renderHistory();
-  }
-
-  // Move to next
-  index++;
-  if (index >= tracks.length) {
-    quizSection.style.display = "none";
-    repeatBtn.style.display = "block";
-    return;
-  }
-
+  function nextSong() {
+    index++;
+    if (index >= tracks.length) {
+      quizSection.style.display = "none";
+      repeatBtn.style.display = "block";
+      return;
+    }
     guessTitle.value = "";
     guessArtist.value = "";
     guessTitle.disabled = false;
     guessArtist.disabled = false;
-
-
-
     startSong();
   }
 
