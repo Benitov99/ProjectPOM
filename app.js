@@ -12,7 +12,6 @@ document.getElementById("quizSection").style.display = "none";
 document.getElementById("sidePanel").style.display = "none";
 document.getElementById("playlistSelect").style.display = "none";
 
-
 // ---------------------------
 // SPOTIFY SDK CALLBACK
 // ---------------------------
@@ -31,19 +30,11 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     player.addListener("ready", ({ device_id }) => {
       deviceId = device_id;
       document.getElementById("playerControls").style.display = "block";
-      console.log("Spotify Player ready:", deviceId);
     });
 
-    player.addListener("authentication_error", e => console.error("Auth error", e));
-    player.addListener("account_error", e => console.error("Account error", e));
-    player.addListener("initialization_error", e => console.error("Init error", e));
-
     player.addListener("player_state_changed", state => {
-      if (!state || !state.track_window) {
-        document.getElementById("currentTrackDisplay").textContent = "No track playing";
-        return;
-      }
-      document.getElementById("currentTrackDisplay").textContent = "🔊 Playing...";
+      document.getElementById("currentTrackDisplay").textContent =
+        state ? "🔊 Playing..." : "No track playing";
     });
 
     player.connect();
@@ -61,8 +52,7 @@ function generateRandomString(length) {
 }
 
 async function sha256(plain) {
-  const encoder = new TextEncoder();
-  return crypto.subtle.digest("SHA-256", encoder.encode(plain));
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(plain));
 }
 
 function base64encode(input) {
@@ -88,20 +78,17 @@ document.getElementById("loginBtn").onclick = async () => {
     "user-read-email",
     "user-read-playback-state",
     "user-modify-playback-state",
-    "playlist-read-private",
-    "playlist-read-collaborative"
+    "playlist-read-private"
   ];
 
-  const authUrl =
+  window.location.href =
     "https://accounts.spotify.com/authorize" +
-    "?client_id=" + clientId +
+    `?client_id=${clientId}` +
     "&response_type=code" +
-    "&redirect_uri=" + encodeURIComponent(redirectUri) +
-    "&scope=" + encodeURIComponent(scopes.join(" ")) +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent(scopes.join(" "))}` +
     "&code_challenge_method=S256" +
-    "&code_challenge=" + challenge;
-
-  window.location.href = authUrl;
+    `&code_challenge=${challenge}`;
 };
 
 // ---------------------------
@@ -114,31 +101,23 @@ async function exchangeToken() {
   const verifier = localStorage.getItem("code_verifier");
   if (!verifier) return;
 
-  const body = new URLSearchParams({
-    client_id: clientId,
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: redirectUri,
-    code_verifier: verifier
-  });
-
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body
+    body: new URLSearchParams({
+      client_id: clientId,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri,
+      code_verifier: verifier
+    })
   });
 
   const data = await res.json();
-  if (data.error) {
-    console.error("Token error", data);
-    return;
-  }
+  if (data.error) return;
 
   accessToken = data.access_token;
-
   window.history.replaceState({}, document.title, redirectUri);
-
-  document.getElementById("status").textContent = "Connected to Spotify ✅";
 }
 
 // ---------------------------
@@ -159,12 +138,10 @@ async function fetchPlaylists() {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   const data = await res.json();
-  if (!data.items) return;
 
   const select = document.getElementById("playlistSelect");
   select.innerHTML = `<option value="">Choose a playlist</option>`;
   select.style.display = "block";
-  select.style.margin = "0 auto"; 
 
   data.items.forEach(p => {
     const opt = document.createElement("option");
@@ -174,65 +151,47 @@ async function fetchPlaylists() {
   });
 }
 
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
 // ---------------------------
-// PLAYLIST TRACKS
+// QUIZ STATE
 // ---------------------------
 let currentPlaylistTracks = [];
 let currentTrackIndex = 0;
 let score = 0;
-let songHistory = []; // for history
+let songHistory = [];
 
+let songScoreState = {
+  title: false,
+  artist: false,
+  points: 0
+};
+
+// ---------------------------
+// PLAYLIST TRACKS
+// ---------------------------
 async function loadPlaylistTracks(playlistId) {
-  const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  const res = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+
   const data = await res.json();
-
-  currentPlaylistTracks = data.items
-    .map(i => i.track)
-    .filter(Boolean)
-    .slice(0, 20);
-
-  if (!currentPlaylistTracks.length) {
-    alert("Playlist has no playable tracks");
-    return;
-  }
-
+  currentPlaylistTracks = data.items.map(i => i.track).filter(Boolean).slice(0, 20);
   shuffleArray(currentPlaylistTracks);
 
   currentTrackIndex = 0;
   score = 0;
   songHistory = [];
   updateScore();
-  showQuizControls();
   renderHistory();
 
-  playTrack(currentPlaylistTracks[0].uri);
+  startSong();
 }
-
-document.getElementById("playlistSelect").addEventListener("change", e => {
-  const playlistId = e.target.value;
-  if (!playlistId) return;
-
-  document.getElementById("quizSection").style.display = "block";
-  loadPlaylistTracks(playlistId);
-});
-
 
 // ---------------------------
 // PLAYBACK
 // ---------------------------
 async function playTrack(uri) {
-  if (!deviceId || !accessToken) return;
-
+  if (!deviceId) return;
   await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
     method: "PUT",
     headers: {
@@ -244,201 +203,146 @@ async function playTrack(uri) {
 }
 
 // ---------------------------
-// PLAY / PAUSE / NEXT
-// ---------------------------
-document.getElementById("playBtn").onclick = () => {
-  if (!currentPlaylistTracks.length) return;
-  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
-};
-
-document.getElementById("pauseBtn").onclick = () => {
-  if (!player) return;
-  player.pause();
-};
-
-document.getElementById("nextBtn").onclick = () => {
-  nextTrack();
-};
-
-// ---------------------------
 // QUIZ LOGIC
 // ---------------------------
 document.getElementById("submitGuessBtn").onclick = () => {
-  const titleInput = document.getElementById("guessTitle");
-  const artistInput = document.getElementById("guessArtist");
-
-  const titleGuess = titleInput.value.toLowerCase().trim();
-  const artistGuess = artistInput.value.toLowerCase().trim();
-
   const track = currentPlaylistTracks[currentTrackIndex];
-  if (!track) return;
+  const titleGuess = guessTitle.value.trim();
+  const artistGuess = guessArtist.value.trim();
+  const mainArtist = track.artists[0].name;
 
-  let pointsEarned = 0;
-  let feedbackMsg = "";
+  let gained = 0;
 
-  // Get main artist only
-  const mainArtist = track.artists[0].name.toLowerCase();
-
-  if (!titleInput.dataset.correct && isSimilar(titleGuess, track.name.toLowerCase())) {
-    pointsEarned++;
-    feedbackMsg += "✅ Title correct! ";
-    titleInput.disabled = true;
-    titleInput.dataset.correct = "true";
+  if (!songScoreState.title && isSimilar(titleGuess, track.name)) {
+    songScoreState.title = true;
+    gained++;
+    guessTitle.disabled = true;
   }
 
-  if (!artistInput.dataset.correct && isSimilar(artistGuess, mainArtist)) {
-    pointsEarned++;
-    feedbackMsg += "✅ Artist correct! ";
-    artistInput.disabled = true;
-    artistInput.dataset.correct = "true";
+  if (!songScoreState.artist && isSimilar(artistGuess, mainArtist)) {
+    songScoreState.artist = true;
+    gained++;
+    guessArtist.disabled = true;
   }
 
-  if (pointsEarned === 0) feedbackMsg = "❌ Try again!";
-  else score += pointsEarned;
+  if (gained > 0) {
+    songScoreState.points += gained;
+    score += gained;
+    updateScore();
+    updateHistoryCurrent();
+  }
 
-  updateScore();
-  document.getElementById("feedback").textContent = feedbackMsg;
-
-  // If both answered, move to next
-  if (titleInput.disabled && artistInput.disabled) {
-    songHistory.push({
-      title: track.name,
-      artist: mainArtist,
-      image: track.album.images[0]?.url || "",
-      points: pointsEarned
-    });
-    renderHistory();
-    setTimeout(nextTrack, 1000);
+  if (songScoreState.title && songScoreState.artist) {
+    setTimeout(nextTrack, 600);
   }
 };
 
 // ---------------------------
-// PASS BUTTON
+// PASS
 // ---------------------------
 document.getElementById("passBtn").onclick = () => {
-  const track = currentPlaylistTracks[currentTrackIndex];
-  const mainArtist = track.artists[0].name.toLowerCase();
-  songHistory.push({
-    title: track.name,
-    artist: mainArtist,
-    image: track.album.images[0]?.url || "",
-    points: 0
-  });
-  renderHistory();
   nextTrack();
 };
 
 // ---------------------------
-// NEXT TRACK
+// SONG FLOW
 // ---------------------------
+function startSong() {
+  const track = currentPlaylistTracks[currentTrackIndex];
+
+  songScoreState = { title: false, artist: false, points: 0 };
+
+  songHistory.unshift({
+    title: track.name,
+    artist: track.artists[0].name,
+    image: track.album.images[0]?.url || "",
+    points: 0
+  });
+
+  if (songHistory.length > 5) songHistory.pop();
+
+  renderHistory();
+  playTrack(track.uri);
+}
+
+function updateHistoryCurrent() {
+  songHistory[0].points = songScoreState.points;
+  renderHistory();
+}
+
 function nextTrack() {
   currentTrackIndex++;
   if (currentTrackIndex >= currentPlaylistTracks.length) {
-    document.getElementById("quizPrompt").textContent = "Quiz finished!";
-    document.getElementById("quizSection").style.display = "none";
-    document.getElementById("repeatBtn").style.display = "inline-block";
+    repeatBtn.style.display = "inline-block";
+    quizSection.style.display = "none";
     return;
   }
 
-  const titleInput = document.getElementById("guessTitle");
-  const artistInput = document.getElementById("guessArtist");
-  titleInput.value = "";
-  artistInput.value = "";
-  titleInput.disabled = false;
-  artistInput.disabled = false;
-  delete titleInput.dataset.correct;
-  delete artistInput.dataset.correct;
+  guessTitle.value = "";
+  guessArtist.value = "";
+  guessTitle.disabled = false;
+  guessArtist.disabled = false;
 
-  document.getElementById("feedback").textContent = "";
-  document.getElementById("quizPrompt").textContent = `Track ${currentTrackIndex + 1} of ${currentPlaylistTracks.length}`;
-
-  playTrack(currentPlaylistTracks[currentTrackIndex].uri);
-}
-
-// ---------------------------
-// SCORE
-// ---------------------------
-function updateScore() {
-  document.getElementById("score").textContent = score;
+  startSong();
 }
 
 // ---------------------------
 // HISTORY
 // ---------------------------
 function renderHistory() {
-  const container = document.getElementById("history");
-  container.innerHTML = "";
+  history.innerHTML = "";
   songHistory.forEach(h => {
-    const div = document.createElement("div");
-    div.className = "history-item";
-    div.innerHTML = `
-      <img src="${h.image}" alt="cover" width="40" height="40">
-      <span>${h.title} - ${h.artist} (${h.points} pts)</span>
-    `;
-    container.appendChild(div);
+    history.innerHTML += `
+      <div class="history-item">
+        <img src="${h.image}" width="40">
+        <span>${h.title} – ${h.artist} (${h.points} pts)</span>
+      </div>`;
   });
 }
 
 // ---------------------------
-// REPEAT QUIZ
-// ---------------------------
-document.getElementById("repeatBtn").onclick = () => {
-  shuffleArray(currentPlaylistTracks);
-  currentTrackIndex = 0;
-  score = 0;
-  songHistory = [];
-  updateScore();
-  renderHistory();
-  showQuizControls();
-  document.getElementById("repeatBtn").style.display = "none";
-  playTrack(currentPlaylistTracks[0].uri);
-};
-
-// ---------------------------
 // UTILS
 // ---------------------------
+function shuffleArray(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+}
+
 function isSimilar(a, b) {
   if (!a || !b) return false;
   a = a.toLowerCase();
   b = b.toLowerCase();
-  if (a === b) return true;
-  // Allow up to 2 character differences
-  let diff = 0;
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+  let diff = Math.abs(a.length - b.length);
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
     if (a[i] !== b[i]) diff++;
   }
   return diff <= 2;
 }
 
 // ---------------------------
-// SHOW QUIZ
-// ---------------------------
-function showQuizControls() {
-  document.getElementById("quizSection").style.display = "block";
-}
-
-// ---------------------------
 // INIT
 // ---------------------------
 async function initApp() {
-  document.getElementById("loginBtn").style.display = "inline-block";
-
   await exchangeToken();
   if (!accessToken) return;
 
   const user = await fetchUserProfile();
-  if (user.product !== "premium") {
-    document.getElementById("status").textContent = "Spotify Premium required ❌";
-    return;
-  }
+  if (user.product !== "premium") return;
 
-  document.getElementById("status").textContent = "Premium account connected 🎧";
-document.getElementById("loginBtn").style.display = "none";
-document.getElementById("playlistSelect").style.display = "block";
-document.getElementById("sidePanel").style.display = "block";
+  loginBtn.style.display = "none";
+  playlistSelect.style.display = "block";
+  sidePanel.style.display = "block";
 
-fetchPlaylists();
-
+  fetchPlaylists();
 }
+
+playlistSelect.addEventListener("change", e => {
+  if (e.target.value) {
+    quizSection.style.display = "block";
+    loadPlaylistTracks(e.target.value);
+  }
+});
 
 initApp();
