@@ -281,15 +281,19 @@ renderHistoryPanel();
   // HISTORY PANEL
   // ---------------------------
   function renderHistoryPanel() {
-    historyPanel.innerHTML = "";
-    songHistory.forEach(h => {
-      historyPanel.innerHTML += `
-        <div class="history-item">
-          <img src="${h.image}" width="40">
-          <span>${h.title} – ${h.artist} (${h.points} pts)</span>
-        </div>`;
-    });
-  }
+  historyPanel.innerHTML = "";
+
+  songHistory.forEach(h => {
+    const wrong = h.points === 0;
+
+    historyPanel.innerHTML += `
+      <div class="history-item ${wrong ? "wrong" : ""}">
+        <img src="${h.image}" width="40">
+        <span>${h.title} – ${h.artist} (${h.points} pts)</span>
+      </div>`;
+  });
+}
+
 
   // ---------------------------
   // UTILS

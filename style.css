@@ -155,3 +155,8 @@ button {
   background: #1db954;
   color: black;
 }
+
+.history-item.wrong span {
+  color: #d9534f;
+  font-weight: 600;
+}
