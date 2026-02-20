@@ -37,6 +37,15 @@ document.addEventListener("DOMContentLoaded", () => {
   playlistSelect.style.display = "none";
   repeatBtn.style.display = "none";
 
+function cleanTitle(title) {
+  return title
+    .replace(/\s*\(feat\.?.*?\)/gi, "")
+    .replace(/\s*\(with.*?\)/gi, "")
+    .replace(/\s*\(remaster.*?\)/gi, "")
+    .trim();
+}
+
+
   // ---------------------------
   // SCORE
   // ---------------------------
@@ -254,7 +263,7 @@ renderHistoryPanel();
     const mainArtist = track.artists[0].name;
     let gained = 0;
 
-    if (!songState.title && isSimilar(guessTitle.value, track.name)) {
+    if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
       songState.title = true;
  songHistory[0].guessedTitle = true;
       gained++;
