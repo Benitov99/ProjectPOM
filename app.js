@@ -52,8 +52,7 @@ function cleanTitle(title) {
   // SCORE
   // ---------------------------
   let score = 0;
-  function updateScore() {
-   function updateScore() {
+function updateScore() {
   document.getElementById("totalScore").textContent = score;
 
   const missed = totalPossiblePoints - score;
@@ -61,7 +60,6 @@ function cleanTitle(title) {
     `Missed: ${missed}`;
 }
 
-  }
 
   // ---------------------------
   // SPOTIFY SDK
