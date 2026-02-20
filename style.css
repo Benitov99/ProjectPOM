@@ -160,3 +160,23 @@ button {
   color: #d9534f;
   font-weight: 600;
 }
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-text {
+  flex: 1;
+}
+
+.points {
+  margin-left: auto;
+  font-weight: bold;
+}
+
+.wrong {
+  color: #e74c3c; /* red */
+  font-weight: 600;
+}
