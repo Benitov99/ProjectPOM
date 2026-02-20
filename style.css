@@ -195,3 +195,21 @@ button {
   opacity: 0.7;
   margin-top: 4px;
 }
+#playlistSelect {
+  font-size: 16px;          /* bigger text */
+  padding: 8px 12px;        /* more space inside */
+  border-radius: 8px;       /* rounded edges */
+  border: 1px solid #888;   /* subtle border */
+  background-color: #f0f0f0; /* light gray background */
+  color: #333;              /* dark text for contrast */
+  cursor: pointer;          /* pointer on hover */
+  min-width: 220px;         /* prevent too small select */
+  transition: all 0.2s ease-in-out;
+font-weight: 500;
+}
+
+#playlistSelect:hover {
+  border-color: #1db954;    /* Spotify green on hover */
+  box-shadow: 0 0 5px rgba(30, 215, 96, 0.5); /* subtle glow */
+  background-color: #fff;
+}
