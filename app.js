@@ -229,6 +229,7 @@ playTrack(track.uri);
   }
 
   function nextSong() {
+renderHistoryPanel();
     index++;
     if (index >= tracks.length) {
       quizSection.style.display = "none";
@@ -266,7 +267,7 @@ playTrack(track.uri);
       score += gained;
       songHistory[0].points = songState.points;
       updateScore();
-      renderHistoryPanel();
+     // renderHistoryPanel();
     }
 
     if (songState.title && songState.artist) setTimeout(nextSong, 600);
