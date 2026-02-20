@@ -302,7 +302,7 @@ renderHistoryPanel();
         <img src="${h.image}" width="40">
 
         <div class="history-text">
-          <span class="title ${h.guessedTitle ? "" : "wrong"}">${h.title}</span>
+          <span class="title ${h.guessedTitle ? "" : "wrong"}">${h.title} - </span>
           <span class="artist ${h.guessedArtist ? "" : "wrong"}">${h.artist}</span>
         </div>
 
