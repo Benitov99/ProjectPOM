@@ -219,7 +219,9 @@ sidePanel.style.display = "block";
       title: track.name,
       artist: track.artists[0].name,
       image: track.album.images[0]?.url || "",
-      points: 0
+      points: 0,
+guessedTitle: false,
+guessedArtist: false
     });
     if (songHistory.length > 5) songHistory.pop();
 
@@ -254,11 +256,13 @@ renderHistoryPanel();
 
     if (!songState.title && isSimilar(guessTitle.value, track.name)) {
       songState.title = true;
+ songHistory[0].guessedTitle = true;
       gained++;
       guessTitle.disabled = true;
     }
     if (!songState.artist && isSimilar(guessArtist.value, mainArtist)) {
       songState.artist = true;
+ songHistory[0].guessedArtist = true;
       gained++;
       guessArtist.disabled = true;
     }
@@ -280,19 +284,25 @@ renderHistoryPanel();
   // ---------------------------
   // HISTORY PANEL
   // ---------------------------
-  function renderHistoryPanel() {
+ function renderHistoryPanel() {
   historyPanel.innerHTML = "";
 
   songHistory.forEach(h => {
-    const wrong = h.points === 0;
-
     historyPanel.innerHTML += `
-      <div class="history-item ${wrong ? "wrong" : ""}">
+      <div class="history-item">
         <img src="${h.image}" width="40">
-        <span>${h.title} – ${h.artist} (${h.points} pts)</span>
-      </div>`;
+
+        <div class="history-text">
+          <span class="title ${h.guessedTitle ? "" : "wrong"}">${h.title}</span>
+          <span class="artist ${h.guessedArtist ? "" : "wrong"}">${h.artist}</span>
+        </div>
+
+        <span class="points">${h.points} pts</span>
+      </div>
+    `;
   });
 }
+
 
 
   // ---------------------------
