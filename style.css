@@ -95,3 +95,63 @@ button {
   display: flex;
   gap: 10px;
 }
+
+/* ===== HISTORY PANEL ===== */
+
+.history-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px;
+  background: #121212;
+  border-radius: 10px;
+}
+
+.history-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-title,
+.history-artist {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guessed {
+  color: #1db954;
+  font-weight: 600;
+}
+
+.missed {
+  color: #e74c3c;
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.history-points {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #1db954;
+  color: black;
+}

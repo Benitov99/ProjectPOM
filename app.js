@@ -187,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderHistoryPanel();
 
     quizSection.style.display = "block";
+sidePanel.style.display = "block";
     startSong();
   }
 
@@ -218,6 +219,8 @@ document.addEventListener("DOMContentLoaded", () => {
       title: track.name,
       artist: track.artists[0].name,
       image: track.album.images[0]?.url || "",
+guessedTitle: titleCorrect,
+guessedArtist: artistCorrect,
       points: 0
     });
     if (songHistory.length > 5) songHistory.pop();
@@ -280,15 +283,40 @@ renderHistoryPanel();
   // HISTORY PANEL
   // ---------------------------
   function renderHistoryPanel() {
-    historyPanel.innerHTML = "";
-    songHistory.forEach(h => {
-      historyPanel.innerHTML += `
-        <div class="history-item">
-          <img src="${h.image}" width="40">
-          <span>${h.title} – ${h.artist} (${h.points} pts)</span>
-        </div>`;
-    });
-  }
+  const panel = document.getElementById("historyPanel");
+  if (!panel) return;
+
+  panel.innerHTML = "";
+
+  history.forEach(item => {
+    const titleClass = item.guessedTitle ? "guessed" : "missed";
+    const artistClass = item.guessedArtist ? "guessed" : "missed";
+
+    panel.innerHTML += `
+      <div class="history-item">
+        <img
+          class="history-cover"
+          src="${item.image || ""}"
+          alt=""
+        />
+
+        <div class="history-info">
+          <div class="history-title ${titleClass}">
+            ${item.title}
+          </div>
+          <div class="history-artist ${artistClass}">
+            ${item.artist}
+          </div>
+        </div>
+
+        <div class="history-points">
+          +${item.points}
+        </div>
+      </div>
+    `;
+  });
+}
+
 
   // ---------------------------
   // UTILS
@@ -325,7 +353,7 @@ renderHistoryPanel();
 
   playlistSelect.onchange = e => {
     if (e.target.value) loadPlaylistTracks(e.target.value);
-sidePanel.style.display = "block";
+
   };
 
 }); // DOMContentLoaded
