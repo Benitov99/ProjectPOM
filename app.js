@@ -53,7 +53,7 @@ function cleanTitle(title) {
   // ---------------------------
   let score = 0;
 function updateScore() {
-  document.getElementById("totalScore").textContent = score;
+  document.getElementById("totalScore").textContent =` ${score}/${totalPossiblePoints}`;
 
   const missed = totalPossiblePoints - score;
   document.getElementById("missedScore").textContent =
@@ -230,8 +230,9 @@ sidePanel.style.display = "block";
 
  renderHistoryPanel();
     
-totalPossiblePoints += 2;
+
 updateScore();
+totalPossiblePoints += 2;
 
     songHistory.unshift({
       title: track.name,
