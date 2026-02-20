@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let player = null;
   let deviceId = null;
 let totalPossiblePoints = 0;
-const missed = 0;
+let missed = 0;
 
 
   // ---------------------------
