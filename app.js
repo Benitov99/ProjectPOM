@@ -309,7 +309,7 @@ renderHistoryPanel();
   function showQuizUI() {
     loginBtn.style.display = "none";
     playlistSelect.style.display = "block";
-    sidePanel.style.display = "block";
+    
   }
 
   // ---------------------------
@@ -325,6 +325,7 @@ renderHistoryPanel();
 
   playlistSelect.onchange = e => {
     if (e.target.value) loadPlaylistTracks(e.target.value);
+sidePanel.style.display = "block";
   };
 
 }); // DOMContentLoaded
