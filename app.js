@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let accessToken = null;
   let player = null;
   let deviceId = null;
+let totalPossiblePoints = 0;
+
 
   // ---------------------------
   // DOM REFERENCES
@@ -51,7 +53,14 @@ function cleanTitle(title) {
   // ---------------------------
   let score = 0;
   function updateScore() {
-    scoreEl.textContent = score;
+   function updateScore() {
+  document.getElementById("totalScore").textContent = score;
+
+  const missed = totalPossiblePoints - score;
+  document.getElementById("missedScore").textContent =
+    `Missed: ${missed}`;
+}
+
   }
 
   // ---------------------------
@@ -223,6 +232,8 @@ sidePanel.style.display = "block";
 
  renderHistoryPanel();
     
+totalPossiblePoints += 2;
+updateScore();
 
     songHistory.unshift({
       title: track.name,
@@ -233,6 +244,7 @@ guessedTitle: false,
 guessedArtist: false
     });
     if (songHistory.length > 5) songHistory.pop();
+
 
     trackCounterEl.textContent = `${index + 1} / ${tracks.length}`;
 
