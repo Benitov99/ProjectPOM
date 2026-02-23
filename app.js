@@ -188,7 +188,7 @@ function updateScore() {
   let tracks = [];
   let index = 0;
   let songHistory = [];
-  let songState = { title: false, artist1: false, artist2: false points: 0 };
+  let songState = { title: false, artist1: false, artist2: false, points: 0 };
 
   // ---------------------------
   // LOAD TRACKS
