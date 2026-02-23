@@ -226,7 +226,7 @@ async function loadPlaylistTracks(id) {
   shuffle(allTracks);
 
   // OPTIONAL: limit quiz length (recommended for performance)
-  tracks = allTracks.slice(0, 50); // or remove this line to allow all
+  tracks = allTracks.slice(0, songLimit); // or remove this line to allow all
 
   index = 0;
   score = 0;
