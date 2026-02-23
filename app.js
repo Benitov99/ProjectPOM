@@ -193,25 +193,49 @@ function updateScore() {
   // ---------------------------
   // LOAD TRACKS
   // ---------------------------
-  async function loadPlaylistTracks(id) {
-    const res = await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks?limit=50`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+async function loadPlaylistTracks(id) {
+  let allTracks = [];
+  let offset = 0;
+  const limit = 100;
 
-    tracks = (await res.json()).items.map(i => i.track).filter(Boolean).slice(0, 20);
-    shuffle(tracks);
+  while (true) {
+    const res = await fetch(
+      `https://api.spotify.com/v1/playlists/${id}/tracks?limit=${limit}&offset=${offset}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
 
-    index = 0;
-    score = 0;
-totalPossiblePoints = 0;
-    songHistory = [];
-    updateScore();
-    renderHistoryPanel();
+    const data = await res.json();
 
-    quizSection.style.display = "block";
-sidePanel.style.display = "block";
-    startSong();
+    const tracksBatch = data.items
+      .map(i => i.track)
+      .filter(Boolean);
+
+    allTracks.push(...tracksBatch);
+
+    if (data.items.length < limit) break;
+    offset += limit;
   }
+
+  // Shuffle ALL songs
+  shuffle(allTracks);
+
+  // OPTIONAL: limit quiz length (recommended for performance)
+  tracks = allTracks.slice(0, 100); // or remove this line to allow all
+
+  index = 0;
+  score = 0;
+  totalPossiblePoints = 0;
+  songHistory = [];
+
+  updateScore();
+  renderHistoryPanel();
+
+  quizSection.style.display = "block";
+  sidePanel.style.display = "block";
+
+  startSong();
+}
+
 
   // ---------------------------
   // PLAYBACK
