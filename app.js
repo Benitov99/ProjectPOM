@@ -35,6 +35,8 @@ let missed = 0;
   const trackCounterEl = document.getElementById("trackCounter");
 const trackYearEl = document.getElementById("trackYear");
 const guessArtist2 = document.getElementById("guessArtist2");
+const songLimitSelect = document.getElementById("songLimitSelect");
+
 
 
   // Hide UI initially
@@ -192,6 +194,7 @@ function updateScore() {
   let index = 0;
   let songHistory = [];
   let songState = { title: false, artist1: false, artist2: false, points: 0 };
+let songLimit = 25; // default
 
   // ---------------------------
   // LOAD TRACKS
@@ -412,10 +415,10 @@ gained++}};
       <div class="history-item">
           <img src="${h.image}" width="40">
         <div class="history-text">
-       <div class="${h.guessedTitle ? "" : "wrong"}">${h.title}</div>
+       <div class="${h.guessedTitle ? "" : "wrong"}">`${h.title} - `</div>
 
           <div>
-            <span class=" - ${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
+            <span class=" ${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
             ${
               h.artist2
                 ? ` & <span class="${h.guessedArtist2 ? "" : "wrong"}">${h.artist2}</span>`
@@ -468,5 +471,9 @@ gained++}};
     if (e.target.value) loadPlaylistTracks(e.target.value);
 
   };
+songLimitSelect.onchange = e => {
+  songLimit = Number(e.target.value);
+};
+
 
 }); // DOMContentLoaded
