@@ -415,7 +415,7 @@ gained++}};
       <div class="history-item">
           <img src="${h.image}" width="40">
         <div class="history-text">
-       <div class="${h.guessedTitle ? "" : "wrong"}">`${h.title} - `</div>
+       <div class="${h.guessedTitle ? "" : "wrong"}">${h.title}</div>
 
           <div>
             <span class=" ${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
