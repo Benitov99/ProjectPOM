@@ -49,6 +49,8 @@ function cleanTitle(title) {
     .replace(/\s*\(with.*?\)/gi, "")
     .replace(/\s*\(remaster.*?\)/gi, "")
     .replace(/\s*\(edit.?\)/gi, "")
+.replace(/\s*\(radio edit.?\)/gi, "")
+.replace(uit liefde voor muziek, "")
     .trim();
 }
 
@@ -220,7 +222,7 @@ async function loadPlaylistTracks(id) {
   shuffle(allTracks);
 
   // OPTIONAL: limit quiz length (recommended for performance)
-  tracks = allTracks.slice(0, 100); // or remove this line to allow all
+  tracks = allTracks.slice(0, 50); // or remove this line to allow all
 
   index = 0;
   score = 0;
@@ -348,6 +350,9 @@ renderHistoryPanel();
       guessTitle.disabled = true;
     }
     if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
+
+if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
+gained ++}
       songState.artist1 = true;
  songHistory[0].guessedArtist1 = true;
 if(!songState.needsTwoArtists){
@@ -361,13 +366,14 @@ if(!songState.needsTwoArtists){
     !songState.artist2 &&
     isSimilar(guessArtist2.value, artists[1])
   ) {
+
+if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
+gained ++}
     songState.artist2 = true;
 songHistory[0].guessedArtist2 = true;
     guessArtist2.disabled = true;
   }
 
-if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
-gained ++}
 
     if (gained) {
       songState.points += gained;
@@ -404,7 +410,7 @@ gained ++}
        <div class="${h.guessedTitle ? "" : "wrong"}">${h.title}</div>
 
           <div>
-            <span class="${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
+            <span class=" - ${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
             ${
               h.artist2
                 ? ` & <span class="${h.guessedArtist2 ? "" : "wrong"}">${h.artist2}</span>`
