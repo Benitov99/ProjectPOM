@@ -213,3 +213,35 @@ font-weight: 500;
   box-shadow: 0 0 5px rgba(30, 215, 96, 0.5); /* subtle glow */
   background-color: #fff;
 }
+
+
+/* Example for mobile screens */
+@media (max-width: 600px) {
+  #mainLayout {
+    flex-direction: column;  /* stack quiz + sidebar vertically */
+  }
+
+  #sidePanel {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  #playlistSelect {
+    min-width: 100%;
+  }
+
+  input {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .buttons button {
+    width: 48%;
+    margin: 1%;
+  }
+}
+.trackYear {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  margin-top: -6px;
+}

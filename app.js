@@ -33,6 +33,8 @@ let missed = 0;
   const playBtn = document.getElementById("playBtn");
   const pauseBtn = document.getElementById("pauseBtn");
   const trackCounterEl = document.getElementById("trackCounter");
+const trackYearEl = document.getElementById("trackYear");
+
 
   // Hide UI initially
   quizSection.style.display = "none";
@@ -228,6 +230,13 @@ sidePanel.style.display = "block";
   function startSong() {
     const track = tracks[index];
     songState = { title: false, artist: false, points: 0 };
+// Show release year
+if (track.album?.release_date) {
+  trackYearEl.textContent = `Year: ${track.album.release_date.slice(0, 4)}`;
+} else {
+  trackYearEl.textContent = "Year: ?";
+}
+
 
  renderHistoryPanel();
     
