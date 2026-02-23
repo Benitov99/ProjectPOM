@@ -245,3 +245,13 @@ font-weight: 500;
   opacity: 0.75;
   margin-top: -6px;
 }
+
+.wrong {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.history-points {
+  margin-left: auto;
+  font-weight: bold;
+}

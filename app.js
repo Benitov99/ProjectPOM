@@ -34,6 +34,7 @@ let missed = 0;
   const pauseBtn = document.getElementById("pauseBtn");
   const trackCounterEl = document.getElementById("trackCounter");
 const trackYearEl = document.getElementById("trackYear");
+const guessArtist2 = document.getElementById("guessArtist2");
 
 
   // Hide UI initially
@@ -47,6 +48,7 @@ function cleanTitle(title) {
     .replace(/\s*\(feat\.?.*?\)/gi, "")
     .replace(/\s*\(with.*?\)/gi, "")
     .replace(/\s*\(remaster.*?\)/gi, "")
+    .replace(/\s*\(edit.?\)/gi, "")
     .trim();
 }
 
@@ -186,7 +188,7 @@ function updateScore() {
   let tracks = [];
   let index = 0;
   let songHistory = [];
-  let songState = { title: false, artist: false, points: 0 };
+  let songState = { title: false, artist1: false, artist2: false points: 0 };
 
   // ---------------------------
   // LOAD TRACKS
@@ -201,6 +203,7 @@ function updateScore() {
 
     index = 0;
     score = 0;
+totalPossiblePoints = 0;
     songHistory = [];
     updateScore();
     renderHistoryPanel();
@@ -228,8 +231,34 @@ sidePanel.style.display = "block";
   // SONG FLOW
   // ---------------------------
   function startSong() {
-    const track = tracks[index];
-    songState = { title: false, artist: false, points: 0 };
+  const track = tracks[index];
+const artists = track.artists.map(a => a.name);
+
+// reset state
+songState = {
+  title: false,
+  artist1: false,
+  artist2: false,
+  needsTwoArtists: artists.length >= 2,
+  points: 0
+};
+
+// show / hide second artist input
+if (songState.needsTwoArtists) {
+  guessArtist2.style.display = "block";
+  guessArtist2.value = "";
+  guessArtist2.disabled = false;
+} else {
+  guessArtist2.style.display = "none";
+}
+
+// reset artist 1
+guessArtist.value = "";
+guessArtist.disabled = false;
+
+
+
+
 // Show release year
 if (track.album?.release_date) {
   trackYearEl.textContent = `Year: ${track.album.release_date.slice(0, 4)}`;
@@ -244,14 +273,16 @@ if (track.album?.release_date) {
 updateScore();
 totalPossiblePoints += 2;
 
-    songHistory.unshift({
-      title: track.name,
-      artist: track.artists[0].name,
-      image: track.album.images[0]?.url || "",
-      points: 0,
-guessedTitle: false,
-guessedArtist: false
-    });
+
+songHistory.unshift({
+  title: track.name,
+  artist1: track.artists[0].name,
+  artist2: track.artists[1]?.name || null,
+  guessedArtist1: songState.artist1,
+  guessedArtist2: songState.needsTwoArtists ? songState.artist2 : null,
+  points: songState.points,
+  image: track.album.images[0]?.url
+});
     if (songHistory.length > 5) songHistory.pop();
 
 
@@ -282,7 +313,7 @@ renderHistoryPanel();
   // ---------------------------
   submitGuessBtn.onclick = () => {
     const track = tracks[index];
-    const mainArtist = track.artists[0].name;
+    const artists = track.artists.map(a => a.name);
     let gained = 0;
 
     if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
@@ -291,12 +322,26 @@ renderHistoryPanel();
       gained++;
       guessTitle.disabled = true;
     }
-    if (!songState.artist && isSimilar(guessArtist.value, mainArtist)) {
-      songState.artist = true;
+    if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
+      songState.artist1 = true;
  songHistory[0].guessedArtist = true;
-      gained++;
+if(!songState.needTwoArtists){
+      gained++;}
       guessArtist.disabled = true;
     }
+
+  // ARTIST 2 (only if needed)
+  if (
+    songState.needsTwoArtists &&
+    !songState.artist2 &&
+    isSimilar(guessArtist2.value, artists[1])
+  ) {
+    songState.artist2 = true;
+    guessArtist2.disabled = true;
+  }
+
+if (songState.needTwoArtists && songState.artist1 && songState.artist2){
+gained ++}
 
     if (gained) {
       songState.points += gained;
@@ -306,7 +351,13 @@ renderHistoryPanel();
      
     }
 
-    if (songState.title && songState.artist) setTimeout(nextSong, 600);
+ const artistDone =
+    songState.needsTwoArtists
+      ? songState.artist1 && songState.artist2
+      : songState.artist1;
+
+  if (songState.title && artistDone) {
+    setTimeout(nextSong, 600);
   };
 
   passBtn.onclick = nextSong;
@@ -321,11 +372,16 @@ renderHistoryPanel();
   songHistory.forEach(h => {
     historyPanel.innerHTML += `
       <div class="history-item">
-        <img src="${h.image}" width="40">
-
+          <img src="${h.image}" width="40">
         <div class="history-text">
-          <span class="title ${h.guessedTitle ? "" : "wrong"}">${h.title} - </span>
-          <span class="artist ${h.guessedArtist ? "" : "wrong"}">${h.artist}</span>
+          <div>${h.title}</div>
+          <div>
+            <span class="${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
+            ${
+              h.artist2
+                ? ` & <span class="${h.guessedArtist2 ? "" : "wrong"}">${h.artist2}</span>`
+                : ""
+            }
         </div>
 
         <span class="points">${h.points} pts</span>
