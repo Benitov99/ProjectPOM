@@ -46,6 +46,7 @@ const guessArtist2 = document.getElementById("guessArtist2");
 function cleanTitle(title) {
   return title
     .replace(/\s*\(feat\.?.*?\)/gi, "")
+.replace(/\s*\(featuring\.?.*?\)/gi, "")
     .replace(/\s*\(with.*?\)/gi, "")
     .replace(/\s*\(remaster.*?\)/gi, "")
     .replace(/\s*\(edit.?\)/gi, "")
@@ -375,9 +376,9 @@ songHistory[0].guessedArtist2 = true;
 
 if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
 if (songState.title && gained === 1){
-gained ++;}
+gained ++}
 if (!songState.title && gained === 0){
-gained++}
+gained++}}
 
     if (gained) {
       songState.points += gained;
