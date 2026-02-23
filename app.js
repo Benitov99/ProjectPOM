@@ -453,6 +453,8 @@ gained++}};
   function showQuizUI() {
     loginBtn.style.display = "none";
     playlistSelect.style.display = "block";
+songLimitSelect.style.display = "block";
+
     
   }
 
