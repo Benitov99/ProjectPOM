@@ -278,6 +278,7 @@ songHistory.unshift({
   title: track.name,
   artist1: track.artists[0].name,
   artist2: track.artists[1]?.name || null,
+guessedTitle: false,
   guessedArtist1: songState.artist1,
   guessedArtist2: songState.needsTwoArtists ? songState.artist2 : null,
   points: songState.points,
@@ -376,7 +377,8 @@ gained ++}
       <div class="history-item">
           <img src="${h.image}" width="40">
         <div class="history-text">
-          <div>${h.title}</div>
+       <div class="${h.guessedTitle ? "" : "wrong"}">${h.title}</div>
+
           <div>
             <span class="${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
             ${
