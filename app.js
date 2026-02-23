@@ -351,9 +351,10 @@ renderHistoryPanel();
     }
     if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
 
-if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
-gained ++}
       songState.artist1 = true;
+
+
+}
  songHistory[0].guessedArtist1 = true;
 if(!songState.needsTwoArtists){
       gained++;}
@@ -367,13 +368,15 @@ if(!songState.needsTwoArtists){
     isSimilar(guessArtist2.value, artists[1])
   ) {
 
-if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
-gained ++}
     songState.artist2 = true;
 songHistory[0].guessedArtist2 = true;
     guessArtist2.disabled = true;
   }
 
+if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
+if (songState.title && gained = 1){
+gained ++;}
+if (!songState.title && gained = 0){gained++}
 
     if (gained) {
       songState.points += gained;
