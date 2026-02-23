@@ -344,12 +344,7 @@ renderHistoryPanel();
     const artists = track.artists.map(a => a.name);
     let gained = 0;
 
-    if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
-      songState.title = true;
- songHistory[0].guessedTitle = true;
-      gained++;
-      guessTitle.disabled = true;
-    }
+  
     if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
 
       songState.artist1 = true;
@@ -376,6 +371,14 @@ if (songState.title && gained === 1){
 gained ++}
 if (!songState.title && gained === 0){
 gained++}};
+
+  if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
+      songState.title = true;
+ songHistory[0].guessedTitle = true;
+      gained++;
+      guessTitle.disabled = true;
+    }
+
 
     if (gained) {
       songState.points += gained;
