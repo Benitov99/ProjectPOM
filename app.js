@@ -353,9 +353,6 @@ renderHistoryPanel();
     if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
 
       songState.artist1 = true;
-
-
-}
  songHistory[0].guessedArtist1 = true;
 if(!songState.needsTwoArtists){
       gained++;}
@@ -378,7 +375,7 @@ if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
 if (songState.title && gained === 1){
 gained ++}
 if (!songState.title && gained === 0){
-gained++}}
+gained++}};
 
     if (gained) {
       songState.points += gained;
