@@ -374,9 +374,10 @@ songHistory[0].guessedArtist2 = true;
   }
 
 if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
-if (songState.title && gained = 1){
+if (songState.title && gained === 1){
 gained ++;}
-if (!songState.title && gained = 0){gained++}
+if (!songState.title && gained === 0){
+gained++}
 
     if (gained) {
       songState.points += gained;
