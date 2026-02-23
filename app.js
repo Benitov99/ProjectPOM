@@ -324,8 +324,8 @@ renderHistoryPanel();
     }
     if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
       songState.artist1 = true;
- songHistory[0].guessedArtist = true;
-if(!songState.needTwoArtists){
+ songHistory[0].guessedArtist1 = true;
+if(!songState.needsTwoArtists){
       gained++;}
       guessArtist.disabled = true;
     }
@@ -337,10 +337,11 @@ if(!songState.needTwoArtists){
     isSimilar(guessArtist2.value, artists[1])
   ) {
     songState.artist2 = true;
+songHistory[0].guessedArtist2 = true;
     guessArtist2.disabled = true;
   }
 
-if (songState.needTwoArtists && songState.artist1 && songState.artist2){
+if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
 gained ++}
 
     if (gained) {
@@ -358,6 +359,7 @@ gained ++}
 
   if (songState.title && artistDone) {
     setTimeout(nextSong, 600);
+}
   };
 
   passBtn.onclick = nextSong;
