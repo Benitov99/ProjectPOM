@@ -51,6 +51,7 @@ function cleanTitle(title) {
 .replace(/\s*\(featuring\.?.*?\)/gi, "")
     .replace(/\s*\(with.*?\)/gi, "")
     .replace(/\s*\(remaster.*?\)/gi, "")
+.replace(/\s*\(remastered.*?\)/gi, "")
     .replace(/\s*\(edit.?\)/gi, "")
 .replace(/\s*\(radio edit.?\)/gi, "")
 .replace(/\s*\uit liefde voor muziek/gi, "")

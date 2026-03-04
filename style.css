@@ -255,3 +255,36 @@ font-weight: 500;
   margin-left: auto;
   font-weight: bold;
 }
+
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidePanel {
+    width: 100%;
+    order: 2;
+  }
+
+  .quizSection {
+    width: 100%;
+    order: 1;
+  }
+}
