@@ -370,15 +370,15 @@ renderHistoryPanel();
 
   // CHECK EACH ARTIST (no points yet)
  artistInputs.forEach((input, i) => {
-  if (
-    input &&
-    artists[i] &&                    // ✅ guard added
-    !songState.artistGuesses[i] &&
-    isSimilar(input.value, artists[i])
-  ) {
-    songState.artistGuesses[i] = true;
-    input.disabled = true;
-  }
+if (
+  !songState.artistGuesses[0] &&
+  isSimilar(guessArtist.value, artists[0])
+) {
+  songState.artistGuesses[0] = true;
+  songState.artist1 = true;
+  songHistory[0].guessedArtist1 = true; // ✅ REQUIRED
+  guessArtist.disabled = true;
+}
 });
 
   // ALL ARTISTS CORRECT → +1 POINT (ONLY ONCE)
@@ -403,6 +403,10 @@ renderHistoryPanel();
   if (songState.title && songState.artistsCorrect) {
     setTimeout(nextSong, 600);
   }
+};
+
+passBtn.onclick = () => {
+  nextSong();
 };
   // ---------------------------
   // HISTORY PANEL
