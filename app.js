@@ -344,19 +344,25 @@ renderHistoryPanel();
   // GUESSING
   // ---------------------------
   submitGuessBtn.onclick = () => {
-    const track = tracks[index];
-    const artists = track.artists.map(a => a.name);
-    let gained = 0;
+  const track = tracks[index];
+  const artists = track.artists.map(a => a.name);
+  let gained = 0;
 
-  
-    if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
+  // TITLE
+  if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
+    songState.title = true;
+    songHistory[0].guessedTitle = true;
+    gained++;
+    guessTitle.disabled = true;
+  }
 
-      songState.artist1 = true;
- songHistory[0].guessedArtist1 = true;
-if(!songState.needsTwoArtists){
-      gained++;}
-      guessArtist.disabled = true;
-    }
+  // ARTIST 1
+  if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
+    songState.artist1 = true;
+    songHistory[0].guessedArtist1 = true;
+    gained++;
+    guessArtist.disabled = true;
+  }
 
   // ARTIST 2 (only if needed)
   if (
@@ -364,43 +370,29 @@ if(!songState.needsTwoArtists){
     !songState.artist2 &&
     isSimilar(guessArtist2.value, artists[1])
   ) {
-
     songState.artist2 = true;
-songHistory[0].guessedArtist2 = true;
+    songHistory[0].guessedArtist2 = true;
+    gained++;
     guessArtist2.disabled = true;
   }
 
-if (songState.needsTwoArtists && songState.artist1 && songState.artist2){
-if (songState.title && gained === 1){
-gained ++}
-if (!songState.title && gained === 0){
-gained++}};
+  // APPLY SCORE ONCE
+  if (gained > 0) {
+    songState.points += gained;
+    score += gained;
+    songHistory[0].points = songState.points;
+    updateScore();
+  }
 
-  if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
-      songState.title = true;
- songHistory[0].guessedTitle = true;
-      gained++;
-      guessTitle.disabled = true;
-    }
-
-
-    if (gained) {
-      songState.points += gained;
-      score += gained;
-      songHistory[0].points = songState.points;
-      updateScore();
-     
-    }
-
- const artistDone =
-    songState.needsTwoArtists
-      ? songState.artist1 && songState.artist2
-      : songState.artist1;
+  // AUTO NEXT SONG
+  const artistDone = songState.needsTwoArtists
+    ? songState.artist1 && songState.artist2
+    : songState.artist1;
 
   if (songState.title && artistDone) {
     setTimeout(nextSong, 600);
-}
-  };
+  }
+};
 
   passBtn.onclick = nextSong;
   repeatBtn.onclick = () => location.reload();
