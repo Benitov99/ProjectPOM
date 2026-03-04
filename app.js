@@ -36,6 +36,7 @@ let missed = 0;
 const trackYearEl = document.getElementById("trackYear");
 const guessArtist2 = document.getElementById("guessArtist2");
 const songLimitSelect = document.getElementById("songLimitSelect");
+const guessArtist3 = document.getElementById("guessArtist3");
 
 
 
@@ -265,12 +266,21 @@ async function loadPlaylistTracks(id) {
   const track = tracks[index];
 const artists = track.artists.map(a => a.name);
 
+[guessArtist, guessArtist2, guessArtist3].forEach((el, i) => {
+  if (i < artists.length) {
+    el.style.display = "block";
+    el.value = "";
+    el.disabled = false;
+  } else {
+    el.style.display = "none";
+  }
+});
+
 // reset state
 songState = {
   title: false,
-  artist1: false,
-  artist2: false,
-  needsTwoArtists: artists.length >= 2,
+  artistsCorrect: false,
+  artistGuesses: new Array(artists.length).fill(false),
   points: 0
 };
 
@@ -346,9 +356,11 @@ renderHistoryPanel();
   submitGuessBtn.onclick = () => {
   const track = tracks[index];
   const artists = track.artists.map(a => a.name);
+  const artistInputs = [guessArtist, guessArtist2, guessArtist3];
+
   let gained = 0;
 
-  // TITLE
+  // TITLE (1 point max)
   if (!songState.title && isSimilar(guessTitle.value, cleanTitle(track.name))) {
     songState.title = true;
     songHistory[0].guessedTitle = true;
@@ -356,27 +368,29 @@ renderHistoryPanel();
     guessTitle.disabled = true;
   }
 
-  // ARTIST 1
-  if (!songState.artist1 && isSimilar(guessArtist.value, artists[0])) {
-    songState.artist1 = true;
-    songHistory[0].guessedArtist1 = true;
+  // CHECK EACH ARTIST (no points yet)
+  artistInputs.forEach((input, i) => {
+    if (
+      input &&
+      !songState.artistGuesses[i] &&
+      isSimilar(input.value, artists[i])
+    ) {
+      songState.artistGuesses[i] = true;
+      input.disabled = true;
+    }
+  });
+
+  // ALL ARTISTS CORRECT → +1 POINT (ONLY ONCE)
+  const allArtistsCorrect =
+    songState.artistGuesses.length > 0 &&
+    songState.artistGuesses.every(Boolean);
+
+  if (!songState.artistsCorrect && allArtistsCorrect) {
+    songState.artistsCorrect = true;
     gained++;
-    guessArtist.disabled = true;
   }
 
-  // ARTIST 2 (only if needed)
-  if (
-    songState.needsTwoArtists &&
-    !songState.artist2 &&
-    isSimilar(guessArtist2.value, artists[1])
-  ) {
-    songState.artist2 = true;
-    songHistory[0].guessedArtist2 = true;
-    gained++;
-    guessArtist2.disabled = true;
-  }
-
-  // APPLY SCORE ONCE
+  // APPLY SCORE
   if (gained > 0) {
     songState.points += gained;
     score += gained;
@@ -385,18 +399,10 @@ renderHistoryPanel();
   }
 
   // AUTO NEXT SONG
-  const artistDone = songState.needsTwoArtists
-    ? songState.artist1 && songState.artist2
-    : songState.artist1;
-
-  if (songState.title && artistDone) {
+  if (songState.title && songState.artistsCorrect) {
     setTimeout(nextSong, 600);
   }
 };
-
-  passBtn.onclick = nextSong;
-  repeatBtn.onclick = () => location.reload();
-
   // ---------------------------
   // HISTORY PANEL
   // ---------------------------
