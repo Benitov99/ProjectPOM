@@ -267,8 +267,25 @@ async function loadPlaylistTracks(id) {
 const artists = track.artists.map(a => a.name);
 songState.artistPointGiven = false;
 
-songState.artistCount = Math.min(artists.length, 3);
+songState = {
+  title: false,
+  artistCount: Math.min(artists.length, 3),
+  artistGuesses: [],
+  artistPointGiven: false,
+  points: 0
+};
+
 songState.artistGuesses = Array(songState.artistCount).fill(false);
+
+[guessArtist, guessArtist2, guessArtist3].forEach((input, i) => {
+  if (i < songState.artistCount) {
+    input.style.display = "block";
+    input.value = "";
+    input.disabled = false;
+  } else {
+    input.style.display = "none";
+  }
+});
 
 guessArtist.style.display = songState.artistCount >= 1 ? "block" : "none";
 guessArtist2.style.display = songState.artistCount >= 2 ? "block" : "none";
@@ -279,32 +296,10 @@ guessArtist3.style.display = songState.artistCount >= 3 ? "block" : "none";
   input.disabled = false;
 });
 
-[guessArtist, guessArtist2, guessArtist3].forEach((el, i) => {
-  if (i < artists.length) {
-    el.style.display = "block";
-    el.value = "";
-    el.disabled = false;
-  } else {
-    el.style.display = "none";
-  }
-});
 
-// reset state
-songState = {
-  title: false,
-  artistsCorrect: false,
-  artistGuesses: new Array(artists.length).fill(false),
-  points: 0
-};
 
-// show / hide second artist input
-if (songState.needsTwoArtists) {
-  guessArtist2.style.display = "block";
-  guessArtist2.value = "";
-  guessArtist2.disabled = false;
-} else {
-  guessArtist2.style.display = "none";
-}
+
+
 
 // reset artist 1
 guessArtist.value = "";
