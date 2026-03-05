@@ -267,6 +267,20 @@ async function loadPlaylistTracks(id) {
 const artists = track.artists.map(a => a.name);
 songState.artistPointGiven = false;
 
+const artistInputs = [guessArtist, guessArtist2, guessArtist3];
+
+artistInputs.forEach((input, i) => {
+  if (i < songState.artistCount) {
+    input.style.display = "block";
+    input.value = "";
+    input.disabled = false;
+  } else {
+    input.style.display = "none";
+    input.value = "";
+    input.disabled = true;
+  }
+});
+
 songState = {
   title: false,
   artistCount: Math.min(artists.length, 3),
@@ -363,8 +377,8 @@ renderHistoryPanel();
   // ---------------------------
   submitGuessBtn.onclick = () => {
   const track = tracks[index];
-  const artists = track.artists.map(a => a.name);
-  const artistInputs = [guessArtist, guessArtist2, guessArtist3];
+  const artists = track.artists.slice(0, songState.artistCount).map(a => a.name);
+ // const artistInputs = [guessArtist, guessArtist2, guessArtist3];
 
   let gained = 0;
 
@@ -395,6 +409,8 @@ artistInputs.forEach((input, i) => {
   songState.artistGuesses.length > 0 &&
   songState.artistGuesses.every(Boolean);
 
+
+
 if (allArtistsCorrect && !songState.artistPointGiven) {
   gained++;
   songState.artistPointGiven = true;
@@ -408,10 +424,12 @@ if (allArtistsCorrect && !songState.artistPointGiven) {
     updateScore();
   }
 
-  // AUTO NEXT SONG
-  if (songState.title && songState.artistsCorrect) {
-    setTimeout(nextSong, 600);
-  }
+ if (
+  songState.title &&
+  songState.artistGuesses.every(Boolean)
+) {
+  setTimeout(nextSong, 600);
+}
 };
 
 passBtn.onclick = () => {
