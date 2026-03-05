@@ -450,10 +450,9 @@ passBtn.onclick = () => {
 
           <div>
             <span class=" ${h.guessedArtist1 ? "" : "wrong"}">${h.artist1}</span>
-            ${
-              h.artist2
-                ? ` & <span class="${h.guessedArtist2 ? "" : "wrong"}">${h.artist2}</span>`
-                : ""
+            ${ h.artist2 ? ` & <span class="${h.guessedArtist2 ? "" : "wrong"}">${h.artist2}</span>` : ""
+            }
+ ${ h.artist3 ? ` & <span class="${h.guessedArtist3 ? "" : "wrong"}">${h.artist3}</span>` : ""
             }
         </div>
 
