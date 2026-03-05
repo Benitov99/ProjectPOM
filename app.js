@@ -265,6 +265,19 @@ async function loadPlaylistTracks(id) {
   function startSong() {
   const track = tracks[index];
 const artists = track.artists.map(a => a.name);
+songState.artistPointGiven = false;
+
+songState.artistCount = Math.min(artists.length, 3);
+songState.artistGuesses = Array(songState.artistCount).fill(false);
+
+guessArtist.style.display = songState.artistCount >= 1 ? "block" : "none";
+guessArtist2.style.display = songState.artistCount >= 2 ? "block" : "none";
+guessArtist3.style.display = songState.artistCount >= 3 ? "block" : "none";
+
+[guessArtist, guessArtist2, guessArtist3].forEach(input => {
+  input.value = "";
+  input.disabled = false;
+});
 
 [guessArtist, guessArtist2, guessArtist3].forEach((el, i) => {
   if (i < artists.length) {
@@ -369,27 +382,29 @@ renderHistoryPanel();
   }
 
   // CHECK EACH ARTIST (no points yet)
- artistInputs.forEach((input, i) => {
-if (
-  !songState.artistGuesses[0] &&
-  isSimilar(guessArtist.value, artists[0])
-) {
-  songState.artistGuesses[0] = true;
-  songState.artist1 = true;
-  songHistory[0].guessedArtist1 = true; // ✅ REQUIRED
-  guessArtist.disabled = true;
-}
+const artistInputs = [guessArtist, guessArtist2, guessArtist3];
+
+artistInputs.forEach((input, i) => {
+  if (
+    i < songState.artistCount &&
+    !songState.artistGuesses[i] &&
+    isSimilar(input.value, artists[i])
+  ) {
+    songState.artistGuesses[i] = true;
+    songHistory[0][`guessedArtist${i + 1}`] = true;
+    input.disabled = true;
+  }
 });
 
   // ALL ARTISTS CORRECT → +1 POINT (ONLY ONCE)
   const allArtistsCorrect =
-    songState.artistGuesses.length > 0 &&
-    songState.artistGuesses.every(Boolean);
+  songState.artistGuesses.length > 0 &&
+  songState.artistGuesses.every(Boolean);
 
-  if (!songState.artistsCorrect && allArtistsCorrect) {
-    songState.artistsCorrect = true;
-    gained++;
-  }
+if (allArtistsCorrect && !songState.artistPointGiven) {
+  gained++;
+  songState.artistPointGiven = true;
+}
 
   // APPLY SCORE
   if (gained > 0) {
