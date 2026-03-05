@@ -382,7 +382,6 @@ renderHistoryPanel();
   }
 
   // CHECK EACH ARTIST (no points yet)
-const artistInputs = [guessArtist, guessArtist2, guessArtist3];
 
 artistInputs.forEach((input, i) => {
   if (
