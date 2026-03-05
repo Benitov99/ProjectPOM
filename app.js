@@ -378,7 +378,7 @@ renderHistoryPanel();
   submitGuessBtn.onclick = () => {
   const track = tracks[index];
   const artists = track.artists.slice(0, songState.artistCount).map(a => a.name);
- // const artistInputs = [guessArtist, guessArtist2, guessArtist3];
+  const artistInputs = [guessArtist, guessArtist2, guessArtist3];
 
   let gained = 0;
 
